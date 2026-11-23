@@ -27,6 +27,18 @@ async function runVerification() {
   await page.screenshot({ path: 'screenshot_1_main_mobile.png' });
   console.log('✓ Captura 1 guardada: screenshot_1_main_mobile.png');
 
+  // 1.1 Probar visor de foto del perrito a pantalla completa
+  console.log('Abriendo visor de foto del perrito...');
+  await page.click('#dogAvatarWrapper');
+  await page.waitForSelector('#dogPhotoViewer:not(.hidden)');
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: 'screenshot_photo_viewer.png' });
+  console.log('✓ Captura guardada: screenshot_photo_viewer.png');
+
+  // Cerrar visor de foto
+  await page.click('#dogPhotoViewer button[title="Cerrar visor"]');
+  await page.waitForSelector('#dogPhotoViewer', { state: 'hidden' });
+
   // 2. Click en Pin de Inicio (Última vez visto) -> Verificar modal centrado
   console.log('Abriendo modal de pin...');
   await page.click('button[onclick*="prepareAddPin(\'last_seen\')"]');
