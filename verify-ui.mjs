@@ -67,17 +67,29 @@ async function runVerification() {
   await page.click('#customConfirmModal button:has-text("Cancelar")');
   await page.waitForSelector('#customConfirmModal', { state: 'hidden' });
 
-  // 3.1 Probar botón Reiniciar (basurero) y que regrese a estado inicial
-  console.log('Probando botón Reiniciar...');
-  await page.click('#btnClearCurrentRoute');
+  // 3.1 Probar exactamente el flujo del usuario: Iniciar -> Pausar -> Reiniciar
+  console.log('Probando flujo: Iniciar -> Pausar -> Reiniciar...');
+  await page.click('#btnMainTracking'); // Iniciar
+  await page.waitForTimeout(400);
+  console.log('Estado tras Iniciar:', await page.innerText('#btnTrackingText'));
+
+  await page.click('#btnMainTracking'); // Pausar
+  await page.waitForTimeout(400);
+  console.log('Estado tras Pausar:', await page.innerText('#btnTrackingText'));
+
+  await page.click('#btnClearCurrentRoute'); // Clic en basurero (Reiniciar)
   await page.waitForSelector('#customConfirmModal:not(.hidden)');
-  await page.click('#btnConfirmModalAction'); // Botón Reiniciar
+  await page.click('#btnConfirmModalAction'); // Clic en botón "Reiniciar" del modal
   await page.waitForSelector('#customConfirmModal', { state: 'hidden' });
   await page.waitForTimeout(500);
 
   const finishVisible = await page.isVisible('#btnFinishTracking');
+  const clearVisible = await page.isVisible('#btnClearCurrentRoute');
   const trackingText = await page.innerText('#btnTrackingText');
-  console.log(`✓ Verificación Reiniciar: Fin visible = ${finishVisible} (esperado false), Botón = ${trackingText} (esperado Iniciar)`);
+  console.log(`✓ Resultado post-reinicio: Fin visible = ${finishVisible} (esperado false), Basurero visible = ${clearVisible} (esperado false), Botón = ${trackingText} (esperado INICIAR)`);
+  if (finishVisible || clearVisible || trackingText.toUpperCase() !== 'INICIAR') {
+    throw new Error('Fallo: Los botones Fin/Reanudar siguen visibles tras reiniciar!');
+  }
 
   // 4. Abrir lista de pines
   console.log('Abriendo drawer de pines...');

@@ -12,7 +12,7 @@ export default function Home() {
       }}
     >
       <iframe
-        src="/index.html?v=13"
+        src="/index.html?v=14"
         style={{ width: "100%", height: "100%", border: "none" }}
         allow="geolocation; camera; accelerometer; gyroscope"
         title="HuellaGPS - Nicaragua"

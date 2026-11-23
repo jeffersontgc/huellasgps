@@ -1410,6 +1410,34 @@
         showToast(meters === 0 ? 'Radio desactivado' : `Radio: ${meters >= 1000 ? (meters/1000) + ' km' : meters + ' m'}`);
       }
 
+      // Helpers seguros para indicadores opcionales
+      function setGPSStatus(status, text) {
+        const dot = document.getElementById('gpsIndicatorDot');
+        const txt = document.getElementById('gpsStatusText');
+        if (dot) {
+          if (status === 'active') dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+          else if (status === 'paused') dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+          else if (status === 'error') dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+          else dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        }
+        if (txt) {
+          txt.innerText = text || '';
+        }
+      }
+
+      function setWakeLockBadge(active) {
+        const badge = document.getElementById('wakeLockBadge');
+        if (badge) {
+          if (active) {
+            badge.classList.remove('text-slate-500');
+            badge.classList.add('text-amber-400');
+          } else {
+            badge.classList.remove('text-amber-400');
+            badge.classList.add('text-slate-500');
+          }
+        }
+      }
+
       // ==========================================
       // RASTREO GPS EN MOTO
       // ==========================================
@@ -1439,8 +1467,7 @@
 
         document.getElementById('btnFinishTracking').classList.remove('hidden');
         document.getElementById('btnClearCurrentRoute').classList.remove('hidden');
-        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-        document.getElementById('gpsStatusText').innerText = 'Rastreando en vivo';
+        setGPSStatus('active', 'Rastreando en vivo');
 
         watchId = navigator.geolocation.watchPosition(
           handleGeolocationSuccess,
@@ -1459,8 +1486,7 @@
           watchId = null;
         }
         updateTrackingButtonUI();
-        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-amber-400';
-        document.getElementById('gpsStatusText').innerText = 'Pausado';
+        setGPSStatus('paused', 'Pausado');
         showToast('Búsqueda pausada');
       }
 
@@ -1477,8 +1503,7 @@
         );
 
         updateTrackingButtonUI();
-        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-        document.getElementById('gpsStatusText').innerText = 'Rastreando en vivo';
+        setGPSStatus('active', 'Rastreando en vivo');
         showToast('Búsqueda reanudada');
       }
 
@@ -1509,8 +1534,7 @@
       }
 
       function handleGeolocationError(err) {
-        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-rose-500';
-        document.getElementById('gpsStatusText').innerText = 'Error de GPS';
+        setGPSStatus('error', 'Error de GPS');
         showToast('No se pudo obtener señal GPS');
       }
 
@@ -1529,9 +1553,6 @@
             clearInterval(searchTimerInterval);
             releaseWakeLock();
 
-            isTracking = false;
-            isPaused = false;
-
             if (liveCoordinates.length >= 2) {
               saveRouteToHistory({
                 id: 'route_' + Date.now(),
@@ -1545,12 +1566,7 @@
             downloadRouteMapCapture();
 
             clearCurrentTrack(false);
-            updateTrackingButtonUI();
-
-            document.getElementById('btnFinishTracking').classList.add('hidden');
-            document.getElementById('btnClearCurrentRoute').classList.add('hidden');
-            document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
-            document.getElementById('gpsStatusText').innerText = 'Ruta guardada';
+            setGPSStatus('ready', 'Ruta guardada');
             showToast('¡Ruta guardada en el mapa!');
           }
         });
@@ -1710,11 +1726,12 @@
 
           updateTrackingButtonUI();
 
-          document.getElementById('btnFinishTracking').classList.add('hidden');
-          document.getElementById('btnClearCurrentRoute').classList.add('hidden');
-          document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
-          document.getElementById('gpsStatusText').innerText = 'GPS Granada Listo';
+          const btnFin = document.getElementById('btnFinishTracking');
+          const btnClear = document.getElementById('btnClearCurrentRoute');
+          if (btnFin) btnFin.classList.add('hidden');
+          if (btnClear) btnClear.classList.add('hidden');
 
+          setGPSStatus('ready', 'GPS Granada Listo');
           showToast('Búsqueda reiniciada');
         };
 
@@ -1767,8 +1784,7 @@
         try {
           if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
-            document.getElementById('wakeLockBadge').classList.remove('text-slate-500');
-            document.getElementById('wakeLockBadge').classList.add('text-amber-400');
+            setWakeLockBadge(true);
           }
         } catch (err) {}
       }
@@ -1776,8 +1792,7 @@
       function releaseWakeLock() {
         if (wakeLock !== null) {
           wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
-          document.getElementById('wakeLockBadge').classList.remove('text-amber-400');
-          document.getElementById('wakeLockBadge').classList.add('text-slate-500');
+          setWakeLockBadge(false);
         }
       }
 
@@ -1861,8 +1876,7 @@
         btn.classList.add('bg-amber-500', 'text-slate-950');
         btn.querySelector('i').className = 'fa-solid fa-stop text-slate-950 text-base';
 
-        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-        document.getElementById('gpsStatusText').innerText = 'Simulación activa';
+        setGPSStatus('paused', 'Simulación activa');
         document.getElementById('btnFinishTracking').classList.remove('hidden');
         document.getElementById('btnClearCurrentRoute').classList.remove('hidden');
 
@@ -1909,8 +1923,7 @@
         btn.querySelector('i').className = 'fa-solid fa-motorcycle text-amber-400 text-base';
 
         document.getElementById('metricSpeed').innerText = '0';
-        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
-        document.getElementById('gpsStatusText').innerText = 'GPS Listo';
+        setGPSStatus('ready', 'GPS Listo');
         showToast('Simulación detenida');
       }
 
@@ -1936,7 +1949,11 @@
       function closeCustomConfirm(confirmed) {
         document.getElementById('customConfirmModal').classList.add('hidden');
         if (confirmed && customConfirmCallback) {
-          customConfirmCallback();
+          try {
+            customConfirmCallback();
+          } catch (err) {
+            console.error('Error al ejecutar confirmación:', err);
+          }
         }
         customConfirmCallback = null;
       }
