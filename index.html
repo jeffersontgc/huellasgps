@@ -195,14 +195,15 @@
           class="glass-card rounded-2xl p-3 shadow-2xl transition-all duration-200"
         >
           <div class="flex items-center gap-3">
-            <!-- Foto / Avatar Perrito -->
+            <!-- Foto / Avatar Perrito con botón para ver pantalla completa -->
             <div
-              onclick="openCaseModal()"
-              class="relative shrink-0 cursor-pointer"
+              onclick="openDogPhotoViewer()"
+              class="relative shrink-0 cursor-pointer group"
+              title="Toca para ver foto a pantalla completa y comparar"
             >
               <div
                 id="dogAvatarWrapper"
-                class="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 border border-emerald-500/50 flex items-center justify-center shadow-inner"
+                class="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 border-2 border-emerald-500/60 flex items-center justify-center shadow-inner active:scale-95 transition"
               >
                 <img
                   id="dogImg"
@@ -215,6 +216,12 @@
                   class="fa-solid fa-dog text-xl text-emerald-400"
                 ></i>
               </div>
+              <!-- Badge lupa para ver foto -->
+              <span
+                class="absolute -bottom-1 -right-1 bg-slate-900 text-emerald-400 w-4 h-4 rounded-full flex items-center justify-center text-[8px] border border-slate-700 shadow"
+              >
+                <i class="fa-solid fa-expand"></i>
+              </span>
               <!-- Punto verde en vivo -->
               <span class="absolute -top-1 -right-1 flex h-3 w-3">
                 <span
@@ -238,6 +245,14 @@
                 >
                   Rocky
                 </h1>
+                <button
+                  type="button"
+                  onclick="event.stopPropagation(); openDogPhotoViewer();"
+                  class="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 active:scale-95 transition"
+                  title="Ver foto para comparar"
+                >
+                  <i class="fa-solid fa-image text-[9px]"></i> Foto
+                </button>
                 <span
                   id="rewardBadge"
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40"
