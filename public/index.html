@@ -1,1444 +1,2248 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es" class="h-full bg-slate-950 text-slate-100">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>HuellaGPS | Búsqueda y Rescate en Moto - Granada, Nicaragua</title>
-  
-  <meta name="theme-color" content="#0b111e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>HuellaGPS | Búsqueda y Rescate en Moto - Granada, Nicaragua</title>
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              green: '#10b981',
-              emerald: '#059669',
-              accent: '#10b981',
-              gold: '#f59e0b',
-              danger: '#ef4444',
-              dark: '#080d1a'
-            }
-          }
+    <meta name="theme-color" content="#0b111e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                green: "#10b981",
+                emerald: "#059669",
+                accent: "#10b981",
+                gold: "#f59e0b",
+                danger: "#ef4444",
+                dark: "#080d1a",
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- FontAwesome 6 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- Leaflet CSS & JS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <!-- html2canvas para captura panorámica del recorrido -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        box-sizing: border-box;
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      input,
+      textarea {
+        user-select: text;
+      }
+      #map {
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+        background: #090d16;
+      }
+
+      /* MODO OSCURO SIN API KEY NI MARCAS DE AGUA (CSS Filter sobre OpenStreetMap) */
+      .dark-map .leaflet-tile-pane {
+        filter: brightness(0.6) invert(1) contrast(2.6) hue-rotate(205deg)
+          saturate(0.25) brightness(0.85);
+      }
+      .day-map .leaflet-tile-pane {
+        filter: none;
+      }
+
+      /* Minimal Leaflet Controls */
+      .leaflet-control-attribution {
+        background: rgba(11, 17, 30, 0.75) !important;
+        color: #64748b !important;
+        font-size: 9px !important;
+        padding: 1px 6px !important;
+        border-top-left-radius: 6px;
+      }
+      .leaflet-control-attribution a {
+        color: #38bdf8 !important;
+        text-decoration: none;
+      }
+
+      /* Estilo Glass Moderno Uber */
+      .glass-card {
+        background: rgba(13, 20, 36, 0.92);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 16px 36px -8px rgba(0, 0, 0, 0.65),
+          0 0 1px 1px rgba(255, 255, 255, 0.05);
+      }
+      .glass-pill {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      }
+
+      /* Floating Round Action Button */
+      .fab-btn {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+        transition: all 0.15s ease;
+      }
+      .fab-btn:active {
+        transform: scale(0.92);
+        background: rgba(30, 41, 59, 0.95);
+      }
+
+      /* Radar Pulse Anim */
+      @keyframes pulse-ring {
+        0% {
+          transform: scale(0.96);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.03);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(0.96);
+          opacity: 0.8;
         }
       }
-    }
-  </script>
+      .pulse-radius {
+        animation: pulse-ring 2.8s infinite ease-in-out;
+      }
 
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
-  <!-- FontAwesome 6 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+      /* Ocultar scrollbar pero permitir scroll horizontal */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body
+    class="h-full w-full overflow-hidden flex flex-col bg-slate-950 text-slate-100"
+  >
+    <!-- MAPA PRINCIPAL (100% Pantalla completa sin API Key ni marcas de agua) -->
+    <div id="map" class="absolute inset-0"></div>
 
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-  <style>
-    * {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      box-sizing: border-box;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    input, textarea {
-      user-select: text;
-    }
-    #map {
-      height: 100%;
-      width: 100%;
-      z-index: 1;
-      background: #090d16;
-    }
-    
-    /* MODO OSCURO SIN API KEY NI MARCAS DE AGUA (CSS Filter sobre OpenStreetMap) */
-    .dark-map .leaflet-tile-pane {
-      filter: brightness(0.6) invert(1) contrast(2.6) hue-rotate(205deg) saturate(0.25) brightness(0.85);
-    }
-    .day-map .leaflet-tile-pane {
-      filter: none;
-    }
-
-    /* Minimal Leaflet Controls */
-    .leaflet-control-attribution {
-      background: rgba(11, 17, 30, 0.75) !important;
-      color: #64748b !important;
-      font-size: 9px !important;
-      padding: 1px 6px !important;
-      border-top-left-radius: 6px;
-    }
-    .leaflet-control-attribution a {
-      color: #38bdf8 !important;
-      text-decoration: none;
-    }
-
-    /* Estilo Glass Moderno Uber */
-    .glass-card {
-      background: rgba(13, 20, 36, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.05);
-    }
-    .glass-pill {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    }
-
-    /* Floating Round Action Button */
-    .fab-btn {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(15, 23, 42, 0.92);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
-      transition: all 0.15s ease;
-    }
-    .fab-btn:active {
-      transform: scale(0.92);
-      background: rgba(30, 41, 59, 0.95);
-    }
-
-    /* Radar Pulse Anim */
-    @keyframes pulse-ring {
-      0% { transform: scale(0.96); opacity: 0.8; }
-      50% { transform: scale(1.03); opacity: 0.4; }
-      100% { transform: scale(0.96); opacity: 0.8; }
-    }
-    .pulse-radius {
-      animation: pulse-ring 2.8s infinite ease-in-out;
-    }
-
-    /* Ocultar scrollbar pero permitir scroll horizontal */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  </style>
-</head>
-<body class="h-full w-full overflow-hidden flex flex-col bg-slate-950 text-slate-100">
-
-  <!-- MAPA PRINCIPAL (100% Pantalla completa sin API Key ni marcas de agua) -->
-  <div id="map" class="absolute inset-0"></div>
-
-  <!-- ======================================================== -->
-  <!-- 1. BARRA SUPERIOR: TARJETA UBER DEL CASO DEL PERRITO    -->
-  <!-- ======================================================== -->
-  <header class="relative z-20 pt-3 px-3.5 pointer-events-none">
-    <div class="max-w-md mx-auto pointer-events-auto">
-      
-      <!-- Ficha Flotante Principal -->
-      <div class="glass-card rounded-2xl p-3 shadow-2xl transition-all duration-200">
-        <div class="flex items-center gap-3">
-          
-          <!-- Foto / Avatar Perrito -->
-          <div onclick="openCaseModal()" class="relative shrink-0 cursor-pointer">
-            <div id="dogAvatarWrapper" class="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 border border-emerald-500/50 flex items-center justify-center shadow-inner">
-              <img id="dogImg" src="" alt="Perrito" class="w-full h-full object-cover hidden">
-              <i id="dogImgPlaceholder" class="fa-solid fa-dog text-xl text-emerald-400"></i>
-            </div>
-            <!-- Punto verde en vivo -->
-            <span class="absolute -top-1 -right-1 flex h-3 w-3">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-slate-900"></span>
-            </span>
-          </div>
-
-          <!-- Nombre, Raza y Recompensa -->
-          <div class="flex-1 min-w-0 cursor-pointer" onclick="openCaseModal()">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <h1 id="dogName" class="text-base font-extrabold text-white tracking-tight truncate">Rocky</h1>
-              <span id="rewardBadge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                <i class="fa-solid fa-award text-[9px]"></i>
-                <span id="rewardBadgeText">C$ 2,000</span>
+    <!-- ======================================================== -->
+    <!-- 1. BARRA SUPERIOR: TARJETA UBER DEL CASO DEL PERRITO    -->
+    <!-- ======================================================== -->
+    <header class="relative z-20 pt-3 px-3.5 pointer-events-none">
+      <div class="max-w-md mx-auto pointer-events-auto">
+        <!-- Ficha Flotante Principal -->
+        <div
+          class="glass-card rounded-2xl p-3 shadow-2xl transition-all duration-200"
+        >
+          <div class="flex items-center gap-3">
+            <!-- Foto / Avatar Perrito -->
+            <div
+              onclick="openCaseModal()"
+              class="relative shrink-0 cursor-pointer"
+            >
+              <div
+                id="dogAvatarWrapper"
+                class="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 border border-emerald-500/50 flex items-center justify-center shadow-inner"
+              >
+                <img
+                  id="dogImg"
+                  src=""
+                  alt="Perrito"
+                  class="w-full h-full object-cover hidden"
+                />
+                <i
+                  id="dogImgPlaceholder"
+                  class="fa-solid fa-dog text-xl text-emerald-400"
+                ></i>
+              </div>
+              <!-- Punto verde en vivo -->
+              <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"
+                ></span>
+                <span
+                  class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-slate-900"
+                ></span>
               </span>
             </div>
-            <p id="dogBreedDesc" class="text-[11px] text-slate-300 truncate mt-0.5 font-medium">Mestizo café, collar rojo</p>
-            <p class="text-[10px] text-slate-400 truncate flex items-center gap-1">
-              <i class="fa-solid fa-location-dot text-rose-400 text-[9px]"></i>
-              <span id="dogZone">Granada: Sector Xalteva / La Calzada</span>
-            </p>
+
+            <!-- Nombre, Raza y Recompensa -->
+            <div
+              class="flex-1 min-w-0 cursor-pointer"
+              onclick="openCaseModal()"
+            >
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <h1
+                  id="dogName"
+                  class="text-base font-extrabold text-white tracking-tight truncate"
+                >
+                  Rocky
+                </h1>
+                <span
+                  id="rewardBadge"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                >
+                  <i class="fa-solid fa-award text-[9px]"></i>
+                  <span id="rewardBadgeText">C$ 2,000</span>
+                </span>
+              </div>
+              <p
+                id="dogBreedDesc"
+                class="text-[11px] text-slate-300 truncate mt-0.5 font-medium"
+              >
+                Mestizo café, collar rojo
+              </p>
+              <p
+                class="text-[10px] text-slate-400 truncate flex items-center gap-1"
+              >
+                <i
+                  class="fa-solid fa-location-dot text-rose-400 text-[9px]"
+                ></i>
+                <span id="dogZone">Granada: Sector Xalteva / La Calzada</span>
+              </p>
+            </div>
+
+            <!-- Botones de Acción de Contacto: Llamar + WhatsApp + Editar -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <a
+                id="btnCall"
+                href="tel:+50588888888"
+                class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-emerald-400 border border-slate-700/80 flex items-center justify-center text-sm shadow transition"
+                title="Llamar al dueño"
+              >
+                <i class="fa-solid fa-phone"></i>
+              </a>
+              <a
+                id="btnWhatsApp"
+                href="https://wa.me/50588888888"
+                target="_blank"
+                class="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center text-base shadow transition"
+                title="WhatsApp del dueño"
+              >
+                <i class="fa-brands fa-whatsapp text-lg"></i>
+              </a>
+              <button
+                onclick="openCaseModal()"
+                class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700/80 flex items-center justify-center text-xs shadow transition"
+                title="Editar caso"
+              >
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
           </div>
 
-          <!-- Botones de Acción de Contacto: Llamar + WhatsApp + Editar -->
-          <div class="flex items-center gap-1.5 shrink-0">
-            <a id="btnCall" href="tel:+50588888888" class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-emerald-400 border border-slate-700/80 flex items-center justify-center text-sm shadow transition" title="Llamar al dueño">
-              <i class="fa-solid fa-phone"></i>
-            </a>
-            <a id="btnWhatsApp" href="https://wa.me/50588888888" target="_blank" class="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center text-base shadow transition" title="WhatsApp del dueño">
-              <i class="fa-brands fa-whatsapp text-lg"></i>
-            </a>
-            <button onclick="openCaseModal()" class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700/80 flex items-center justify-center text-xs shadow transition" title="Editar caso">
-              <i class="fa-solid fa-pen"></i>
-            </button>
+          <!-- Sub-fila limpia: Selector de Radio de Búsqueda -->
+          <div
+            class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs"
+          >
+            <div
+              class="text-[11px] text-slate-400 flex items-center gap-1.5 font-medium"
+            >
+              <i class="fa-solid fa-bullseye text-rose-400 text-xs"></i>
+              <span>Radio:</span>
+            </div>
+            <div
+              class="flex items-center gap-1 bg-slate-900/90 rounded-lg p-0.5 border border-slate-800"
+            >
+              <button
+                onclick="setSearchRadius(0)"
+                id="radBtn0"
+                class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition"
+              >
+                Off
+              </button>
+              <button
+                onclick="setSearchRadius(500)"
+                id="radBtn500"
+                class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition"
+              >
+                500m
+              </button>
+              <button
+                onclick="setSearchRadius(1000)"
+                id="radBtn1000"
+                class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-slate-950 transition"
+              >
+                1 km
+              </button>
+              <button
+                onclick="setSearchRadius(2000)"
+                id="radBtn2000"
+                class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition"
+              >
+                2 km
+              </button>
+            </div>
           </div>
-
         </div>
 
-        <!-- Sub-fila limpia: Selector de Radio de Búsqueda -->
-        <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-          <div class="text-[11px] text-slate-400 flex items-center gap-1.5 font-medium">
-            <i class="fa-solid fa-bullseye text-rose-400 text-xs"></i>
-            <span>Radio:</span>
-          </div>
-          <div class="flex items-center gap-1 bg-slate-900/90 rounded-lg p-0.5 border border-slate-800">
-            <button onclick="setSearchRadius(0)" id="radBtn0" class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition">Off</button>
-            <button onclick="setSearchRadius(500)" id="radBtn500" class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition">500m</button>
-            <button onclick="setSearchRadius(1000)" id="radBtn1000" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-slate-950 transition">1 km</button>
-            <button onclick="setSearchRadius(2000)" id="radBtn2000" class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition">2 km</button>
-          </div>
+        <!-- Atajos Rápidos de Lugares en Granada (Píldoras con scroll suave) -->
+        <div
+          class="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar py-0.5"
+        >
+          <button
+            onclick="panToPreset('colon')"
+            class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition"
+          >
+            <i class="fa-solid fa-tree text-emerald-400 text-xs"></i> Parque
+            Colón
+          </button>
+          <button
+            onclick="panToPreset('calzada')"
+            class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition"
+          >
+            <i class="fa-solid fa-road text-amber-400 text-xs"></i> La Calzada
+          </button>
+          <button
+            onclick="panToPreset('malecon')"
+            class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition"
+          >
+            <i class="fa-solid fa-water text-cyan-400 text-xs"></i> Malecón
+          </button>
+          <button
+            onclick="panToPreset('xalteva')"
+            class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition"
+          >
+            <i class="fa-solid fa-church text-indigo-400 text-xs"></i> Xalteva
+          </button>
         </div>
       </div>
+    </header>
 
-      <!-- Atajos Rápidos de Lugares en Granada (Píldoras con scroll suave) -->
-      <div class="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar py-0.5">
-        <button onclick="panToPreset('colon')" class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition">
-          <i class="fa-solid fa-tree text-emerald-400 text-xs"></i> Parque Colón
-        </button>
-        <button onclick="panToPreset('calzada')" class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition">
-          <i class="fa-solid fa-road text-amber-400 text-xs"></i> La Calzada
-        </button>
-        <button onclick="panToPreset('malecon')" class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition">
-          <i class="fa-solid fa-water text-cyan-400 text-xs"></i> Malecón
-        </button>
-        <button onclick="panToPreset('xalteva')" class="shrink-0 glass-pill text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 active:scale-95 transition">
-          <i class="fa-solid fa-church text-indigo-400 text-xs"></i> Xalteva
-        </button>
-      </div>
+    <!-- ======================================================== -->
+    <!-- BOTONES FLOTANTES IZQUIERDA: PINES RÁPIDOS              -->
+    <!-- ======================================================== -->
+    <div
+      class="absolute left-3.5 top-[185px] z-20 flex flex-col gap-2.5 pointer-events-auto"
+    >
+      <!-- 1: Última vez visto -->
+      <button
+        onclick="prepareAddPin('last_seen')"
+        class="fab-btn text-white border-rose-500/40 relative group"
+        title="Última vez visto"
+      >
+        <i class="fa-solid fa-location-crosshairs text-rose-500 text-base"></i>
+      </button>
 
+      <!-- 2: Avistamiento -->
+      <button
+        onclick="prepareAddPin('sighting')"
+        class="fab-btn text-white border-amber-500/40 relative group"
+        title="Avistamiento / Pista"
+      >
+        <i class="fa-solid fa-paw text-amber-400 text-base"></i>
+      </button>
+
+      <!-- 3: Cartel pegado -->
+      <button
+        onclick="prepareAddPin('poster')"
+        class="fab-btn text-white border-blue-500/40 relative group"
+        title="Cartel pegado / Vecino"
+      >
+        <i class="fa-solid fa-clipboard-question text-blue-400 text-base"></i>
+      </button>
+
+      <!-- 4: ¡Encontrado! -->
+      <button
+        onclick="prepareAddPin('found')"
+        class="fab-btn text-white border-emerald-500/40 relative group"
+        title="¡Perrito Encontrado!"
+      >
+        <i class="fa-solid fa-heart text-emerald-400 text-base"></i>
+      </button>
     </div>
-  </header>
 
-  <!-- ======================================================== -->
-  <!-- 2. BOTONES FLOTANTES LATERALES (LIMPIOS, SIN AMONTONAR) -->
-  <!-- ======================================================== -->
-  <div class="absolute right-3.5 top-[185px] z-20 flex flex-col gap-2.5 pointer-events-auto">
-    <!-- Centrar Ubicación GPS -->
-    <button onclick="recenterToGPS()" class="fab-btn text-white group" title="Mi ubicación">
-      <i class="fa-solid fa-crosshairs text-emerald-400 text-base"></i>
-    </button>
+    <!-- ======================================================== -->
+    <!-- BOTONES FLOTANTES DERECHA: HERRAMIENTAS Y RUTA           -->
+    <!-- ======================================================== -->
+    <div
+      class="absolute right-3.5 top-[185px] z-20 flex flex-col gap-2.5 pointer-events-auto"
+    >
+      <!-- Centrar Ubicación GPS -->
+      <button
+        onclick="recenterToGPS()"
+        class="fab-btn text-white group"
+        title="Mi ubicación"
+      >
+        <i class="fa-solid fa-crosshairs text-emerald-400 text-base"></i>
+      </button>
 
-    <!-- Alternar Modo Día (Sol) / Noche (Oscuro) -->
-    <button onclick="toggleMapTheme()" id="btnMapTheme" class="fab-btn text-white" title="Modo Día/Noche">
-      <i id="themeIcon" class="fa-solid fa-moon text-amber-300 text-base"></i>
-    </button>
+      <!-- Alternar Modo Día (Sol) / Noche (Oscuro) -->
+      <button
+        onclick="toggleMapTheme()"
+        id="btnMapTheme"
+        class="fab-btn text-white"
+        title="Modo Día/Noche"
+      >
+        <i id="themeIcon" class="fa-solid fa-moon text-amber-300 text-base"></i>
+      </button>
 
-    <!-- Ver/Ocultar Rutas Anteriores ya cubiertas -->
-    <button onclick="togglePastRoutes()" id="btnPastRoutes" class="fab-btn text-white relative" title="Ver calles ya recorridas">
-      <i class="fa-solid fa-route text-cyan-400 text-base"></i>
-    </button>
+      <!-- Ver/Ocultar Rutas Anteriores ya cubiertas -->
+      <button
+        onclick="togglePastRoutes()"
+        id="btnPastRoutes"
+        class="fab-btn text-white relative"
+        title="Ver calles ya recorridas"
+      >
+        <i class="fa-solid fa-route text-cyan-400 text-base"></i>
+      </button>
 
-    <!-- Simulación de Moto (Prueba desde casa) -->
-    <button onclick="toggleSimulation()" id="btnSimulate" class="fab-btn text-white border-amber-500/40" title="Simular recorrido en moto por Granada">
-      <i class="fa-solid fa-motorcycle text-amber-400 text-base"></i>
-    </button>
+      <!-- Simulación de Moto (Prueba desde casa) -->
+      <button
+        onclick="toggleSimulation()"
+        id="btnSimulate"
+        class="fab-btn text-white border-amber-500/40"
+        title="Simular recorrido en moto por Granada"
+      >
+        <i class="fa-solid fa-motorcycle text-amber-400 text-base"></i>
+      </button>
 
-    <!-- Lista de Pines Registrados -->
-    <button onclick="openPinsDrawer()" class="fab-btn text-white relative" title="Lista de pines">
-      <i class="fa-solid fa-list-check text-rose-400 text-base"></i>
-      <span id="pinsCountBadge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-900">0</span>
-    </button>
-  </div>
+      <!-- Descargar Captura del Recorrido (Alejado a medida) -->
+      <button
+        onclick="downloadRouteMapCapture()"
+        id="btnDownloadCapture"
+        class="fab-btn text-white border-emerald-500/40"
+        title="Descargar captura del recorrido completo alejado"
+      >
+        <i class="fa-solid fa-camera text-emerald-400 text-base"></i>
+      </button>
 
-  <!-- AVISO CUANDO SE ACTIVA MODO TOQUE EN MAPA -->
-  <div id="pinTapBanner" class="absolute top-24 left-1/2 -translate-x-1/2 z-30 bg-amber-500 text-slate-950 font-black text-xs px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 hidden border-2 border-slate-900 animate-bounce pointer-events-auto">
-    <i class="fa-solid fa-hand-pointer"></i>
-    <span id="pinTapBannerText">Toca en el mapa para marcar punto</span>
-    <button onclick="cancelPinPlacement()" class="ml-2 bg-slate-950 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">✕</button>
-  </div>
-
-  <!-- ======================================================== -->
-  <!-- 3. BARRA INFERIOR UBER: PINES RÁPIDOS + HUD DE MOTO      -->
-  <!-- ======================================================== -->
-  <footer class="mt-auto relative z-20 pb-4 px-3.5 pointer-events-none">
-    <div class="max-w-md mx-auto pointer-events-auto space-y-2">
-      
-      <!-- Fila Flotante de Pines Rápidos (4 Botones Horizontales con separación limpia) -->
-      <div class="glass-card rounded-2xl px-3 py-2 flex items-center justify-between shadow-xl">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">
-          <i class="fa-solid fa-location-pin text-rose-400 mr-0.5"></i> Pin:
-        </span>
-        
-        <div class="flex items-center gap-2">
-          <!-- 1: Última vez visto -->
-          <button onclick="prepareAddPin('last_seen')" class="px-2.5 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white flex items-center gap-1.5 text-xs font-bold transition shadow" title="Última vez visto">
-            <i class="fa-solid fa-location-crosshairs text-xs"></i>
-            <span class="text-[11px]">Inicio</span>
-          </button>
-
-          <!-- 2: Avistamiento -->
-          <button onclick="prepareAddPin('sighting')" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 flex items-center gap-1.5 text-xs font-bold transition shadow" title="Avistamiento / Pista">
-            <i class="fa-solid fa-paw text-xs"></i>
-            <span class="text-[11px]">Visto</span>
-          </button>
-
-          <!-- 3: Cartel pegado -->
-          <button onclick="prepareAddPin('poster')" class="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white flex items-center gap-1.5 text-xs font-bold transition shadow" title="Cartel pegado / Vecino">
-            <i class="fa-solid fa-clipboard-question text-xs"></i>
-            <span class="text-[11px]">Cartel</span>
-          </button>
-
-          <!-- 4: ¡Encontrado! -->
-          <button onclick="prepareAddPin('found')" class="px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 flex items-center gap-1.5 text-xs font-bold transition shadow" title="¡Perrito Encontrado!">
-            <i class="fa-solid fa-heart text-xs"></i>
-            <span class="text-[11px]">¡Éxito!</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Tarjeta HUD Principal: Métricas Claras + Botón Gigante de Búsqueda -->
-      <div class="glass-card rounded-3xl p-3.5 shadow-2xl">
-        
-        <!-- Métricas de Ruta: Velocidad, Distancia, Tiempo -->
-        <div class="grid grid-cols-3 gap-2 pb-3 border-b border-slate-800">
-          
-          <!-- Velocidad -->
-          <div class="bg-slate-900/80 rounded-2xl py-2 px-1 text-center border border-slate-800/80">
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-center gap-1">
-              <i class="fa-solid fa-gauge-high text-emerald-400 text-xs"></i> Velocidad
-            </div>
-            <div class="flex items-baseline justify-center gap-0.5 mt-0.5">
-              <span id="metricSpeed" class="text-2xl font-black text-white font-mono tracking-tight">0</span>
-              <span class="text-[10px] font-semibold text-slate-400">km/h</span>
-            </div>
-          </div>
-
-          <!-- Distancia -->
-          <div class="bg-slate-900/80 rounded-2xl py-2 px-1 text-center border border-slate-800/80">
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-center gap-1">
-              <i class="fa-solid fa-arrows-left-right text-cyan-400 text-xs"></i> Distancia
-            </div>
-            <div class="flex items-baseline justify-center gap-0.5 mt-0.5">
-              <span id="metricDistance" class="text-2xl font-black text-white font-mono tracking-tight">0.0</span>
-              <span class="text-[10px] font-semibold text-slate-400">km</span>
-            </div>
-          </div>
-
-          <!-- Tiempo -->
-          <div class="bg-slate-900/80 rounded-2xl py-2 px-1 text-center border border-slate-800/80">
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-center gap-1">
-              <i class="fa-solid fa-stopwatch text-amber-400 text-xs"></i> Tiempo
-            </div>
-            <div class="flex items-baseline justify-center mt-0.5">
-              <span id="metricTime" class="text-2xl font-black text-white font-mono tracking-tight">00:00</span>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Botón Gigante Tipo Uber para Manejar en Moto -->
-        <div class="pt-3 flex items-center gap-2">
-          <button id="btnMainTracking" onclick="handleMainTrackingToggle()" class="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition">
-            <i id="btnTrackingIcon" class="fa-solid fa-play text-base"></i>
-            <span id="btnTrackingText" class="tracking-wide uppercase text-sm">Iniciar Búsqueda</span>
-          </button>
-
-          <!-- Botón Finalizar (Visible solo cuando hay búsqueda activa) -->
-          <button id="btnFinishTracking" onclick="finishCurrentSearch()" class="hidden py-3.5 px-3.5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition" title="Guardar búsqueda en historial">
-            <i class="fa-solid fa-flag-checkered text-sm"></i>
-            <span>Finalizar</span>
-          </button>
-
-          <!-- Botón Descartar / Limpiar trazado -->
-          <button id="btnClearCurrentRoute" onclick="clearCurrentTrack()" class="hidden py-3.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold text-xs flex items-center justify-center border border-slate-700 transition" title="Limpiar trazado actual">
-            <i class="fa-solid fa-trash-can text-sm"></i>
-          </button>
-        </div>
-
-        <!-- Estado de GPS y Pantalla activa -->
-        <div class="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 px-1">
-          <span class="flex items-center gap-1.5">
-            <span id="gpsIndicatorDot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span id="gpsStatusText" class="text-[11px]">GPS Granada Listo</span>
-          </span>
-          <span id="wakeLockBadge" class="flex items-center gap-1 text-slate-500 text-[11px]">
-            <i class="fa-solid fa-bolt text-[10px]"></i>
-            <span>Pantalla: Auto</span>
-          </span>
-        </div>
-
-      </div>
-
+      <!-- Lista de Pines Registrados -->
+      <button
+        onclick="openPinsDrawer()"
+        class="fab-btn text-white relative"
+        title="Lista de pines"
+      >
+        <i class="fa-solid fa-list-check text-rose-400 text-base"></i>
+        <span
+          id="pinsCountBadge"
+          class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-900"
+          >0</span
+        >
+      </button>
     </div>
-  </footer>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: FICHA DEL CASO Y DATOS DEL PERRITO               -->
-  <!-- ======================================================== -->
-  <div id="caseModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto shadow-2xl">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-paw text-emerald-400 text-lg"></i>
-          <h2 class="text-base font-bold text-white">Ficha del Perrito Buscado</h2>
-        </div>
-        <button onclick="closeCaseModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm">✕</button>
-      </div>
+    <!-- AVISO CUANDO SE ACTIVA MODO TOQUE EN MAPA -->
+    <div
+      id="pinTapBanner"
+      class="absolute top-24 left-1/2 -translate-x-1/2 z-30 bg-amber-500 text-slate-950 font-black text-xs px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 hidden border-2 border-slate-900 animate-bounce pointer-events-auto"
+    >
+      <i class="fa-solid fa-hand-pointer"></i>
+      <span id="pinTapBannerText">Toca en el mapa para marcar punto</span>
+      <button
+        onclick="cancelPinPlacement()"
+        class="ml-2 bg-slate-950 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+      >
+        ✕
+      </button>
+    </div>
 
-      <form id="dogCaseForm" onsubmit="saveCaseForm(event)" class="space-y-3.5 mt-3.5">
-        <!-- Foto -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Foto del perrito (opcional)</label>
-          <div class="flex items-center gap-3">
-            <div id="modalPhotoPreview" class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-              <i class="fa-solid fa-camera text-slate-500 text-lg"></i>
-            </div>
-            <div class="flex-1">
-              <input type="file" id="modalDogPhotoInput" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer">
-              <p class="text-[10px] text-slate-500 mt-0.5">Se guarda en la memoria del teléfono.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Nombre -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre del perrito *</label>
-          <input type="text" id="inputDogName" required placeholder="Ej: Rocky" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <!-- Raza y Descripción -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Raza y Señas particulares *</label>
-          <input type="text" id="inputDogBreed" required placeholder="Ej: Mestizo café claro, orejas caídas, collar rojo" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <!-- Zona -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Zona donde se perdió en Granada *</label>
-          <input type="text" id="inputDogZone" required placeholder="Ej: Sector Xalteva / La Calzada" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <!-- Teléfono de contacto / WhatsApp -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Teléfono del Dueño (Nicaragua +505) *</label>
-          <div class="relative">
-            <span class="absolute left-3 top-2 text-slate-400 text-sm font-mono">+505</span>
-            <input type="tel" id="inputDogPhone" required placeholder="8888 8888" class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-16 pr-3 py-2 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-          </div>
-        </div>
-
-        <!-- Recompensa Toggle -->
-        <div class="p-3 rounded-xl bg-slate-800/80 border border-amber-500/30">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-award text-amber-400 text-base"></i>
-              <div>
-                <p class="text-xs font-bold text-white">¿Ofrece Recompensa?</p>
-                <p class="text-[10px] text-slate-400">Destaca el caso para los rescatistas</p>
+    <!-- ======================================================== -->
+    <!-- 3. BARRA INFERIOR FLOTANTE ULTRA-SLIM (NO CHOCA CON NAVEGADOR) -->
+    <!-- ======================================================== -->
+    <footer class="mt-auto relative z-20 pb-7 px-3.5 pointer-events-none mb-safe">
+      <div class="max-w-md mx-auto pointer-events-auto">
+        <div
+          class="glass-card rounded-2xl px-3.5 py-2 shadow-2xl flex items-center justify-between gap-2.5 border border-slate-700/80"
+        >
+          <!-- Métricas en línea súper compactas -->
+          <div class="flex items-center gap-3 pr-2.5 border-r border-slate-800">
+            <!-- Velocidad -->
+            <div class="text-center">
+              <div class="text-[9px] font-bold text-slate-400 uppercase leading-none">Vel</div>
+              <div class="flex items-baseline gap-0.5 mt-0.5">
+                <span id="metricSpeed" class="text-base font-black text-white font-mono leading-none">0</span>
+                <span class="text-[8px] font-bold text-slate-400">km/h</span>
               </div>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="checkReward" class="sr-only peer" onchange="toggleRewardInputVisibility()">
-              <div class="w-10 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-            </label>
+
+            <!-- Distancia -->
+            <div class="text-center">
+              <div class="text-[9px] font-bold text-slate-400 uppercase leading-none">Dist</div>
+              <div class="flex items-baseline gap-0.5 mt-0.5">
+                <span id="metricDistance" class="text-base font-black text-white font-mono leading-none">0.0</span>
+                <span class="text-[8px] font-bold text-slate-400">km</span>
+              </div>
+            </div>
+
+            <!-- Tiempo -->
+            <div class="text-center">
+              <div class="text-[9px] font-bold text-slate-400 uppercase leading-none">Tiempo</div>
+              <div class="flex items-baseline mt-0.5">
+                <span id="metricTime" class="text-base font-black text-white font-mono leading-none">00:00</span>
+              </div>
+            </div>
           </div>
 
-          <div id="rewardDetailsBox" class="mt-2.5 pt-2.5 border-t border-slate-700 hidden">
-            <label class="block text-[11px] font-semibold text-amber-300 mb-1">Monto de la Recompensa</label>
-            <input type="text" id="inputRewardAmount" placeholder="Ej: C$ 2,000 / $100" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3 py-1.5 text-xs text-amber-200 placeholder-slate-500 focus:outline-none focus:border-amber-400">
+          <!-- Botones Flotantes de Control (Iniciar / Pausar / Finalizar / Eliminar) -->
+          <div class="flex items-center gap-1.5 flex-1 justify-end">
+            <!-- Botón Principal Flotante (Iniciar / Pausar) -->
+            <button
+              id="btnMainTracking"
+              onclick="handleMainTrackingToggle()"
+              class="py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-xs flex items-center justify-center gap-1 shadow-md shadow-emerald-950/40 transition shrink-0"
+            >
+              <i id="btnTrackingIcon" class="fa-solid fa-play text-xs"></i>
+              <span id="btnTrackingText" class="tracking-wide uppercase text-[11px]">Iniciar</span>
+            </button>
+
+            <!-- Botón Finalizar (Flotante) -->
+            <button
+              id="btnFinishTracking"
+              onclick="finishCurrentSearch()"
+              class="hidden py-2 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1 shadow transition shrink-0"
+              title="Guardar búsqueda en historial"
+            >
+              <i class="fa-solid fa-flag-checkered text-xs"></i>
+              <span class="text-[11px]">Fin</span>
+            </button>
+
+            <!-- Botón Eliminar / Reiniciar Ruta (Flotante) -->
+            <button
+              id="btnClearCurrentRoute"
+              onclick="clearCurrentTrack()"
+              class="hidden w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold text-xs flex items-center justify-center border border-slate-700 transition shrink-0"
+              title="Limpiar trazado actual"
+            >
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
           </div>
         </div>
+      </div>
+    </footer>
 
-        <div class="pt-2 flex items-center gap-2">
-          <button type="button" onclick="closeCaseModal()" class="w-1/3 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs">Cancelar</button>
-          <button type="submit" class="w-2/3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm">Guardar Ficha</button>
+    <!-- ======================================================== -->
+    <!-- MODAL: FICHA DEL CASO Y DATOS DEL PERRITO               -->
+    <!-- ======================================================== -->
+    <div
+      id="caseModal"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto shadow-2xl"
+      >
+        <div
+          class="flex items-center justify-between pb-3 border-b border-slate-800"
+        >
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-paw text-emerald-400 text-lg"></i>
+            <h2 class="text-base font-bold text-white">
+              Ficha del Perrito Buscado
+            </h2>
+          </div>
+          <button
+            onclick="closeCaseModal()"
+            class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm"
+          >
+            ✕
+          </button>
         </div>
-      </form>
+
+        <form
+          id="dogCaseForm"
+          onsubmit="saveCaseForm(event)"
+          class="space-y-3.5 mt-3.5"
+        >
+          <!-- Foto -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1"
+              >Foto del perrito (opcional)</label
+            >
+            <div class="flex items-center gap-3">
+              <div
+                id="modalPhotoPreview"
+                class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0"
+              >
+                <i class="fa-solid fa-camera text-slate-500 text-lg"></i>
+              </div>
+              <div class="flex-1">
+                <input
+                  type="file"
+                  id="modalDogPhotoInput"
+                  accept="image/*"
+                  class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer"
+                />
+                <p class="text-[10px] text-slate-500 mt-0.5">
+                  Se guarda en la memoria del teléfono.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nombre -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1"
+              >Nombre del perrito *</label
+            >
+            <input
+              type="text"
+              id="inputDogName"
+              required
+              placeholder="Ej: Rocky"
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- Raza y Descripción -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1"
+              >Raza y Señas particulares *</label
+            >
+            <input
+              type="text"
+              id="inputDogBreed"
+              required
+              placeholder="Ej: Mestizo café claro, orejas caídas, collar rojo"
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- Zona -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1"
+              >Zona donde se perdió en Granada *</label
+            >
+            <input
+              type="text"
+              id="inputDogZone"
+              required
+              placeholder="Ej: Sector Xalteva / La Calzada"
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- Teléfono de contacto / WhatsApp -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1"
+              >Teléfono del Dueño (Nicaragua +505) *</label
+            >
+            <div class="relative">
+              <span
+                class="absolute left-3 top-2 text-slate-400 text-sm font-mono"
+                >+505</span
+              >
+              <input
+                type="tel"
+                id="inputDogPhone"
+                required
+                placeholder="8888 8888"
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-16 pr-3 py-2 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          <!-- Recompensa Toggle -->
+          <div
+            class="p-3 rounded-xl bg-slate-800/80 border border-amber-500/30"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-award text-amber-400 text-base"></i>
+                <div>
+                  <p class="text-xs font-bold text-white">
+                    ¿Ofrece Recompensa?
+                  </p>
+                  <p class="text-[10px] text-slate-400">
+                    Destaca el caso para los rescatistas
+                  </p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="checkReward"
+                  class="sr-only peer"
+                  onchange="toggleRewardInputVisibility()"
+                />
+                <div
+                  class="w-10 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"
+                ></div>
+              </label>
+            </div>
+
+            <div
+              id="rewardDetailsBox"
+              class="mt-2.5 pt-2.5 border-t border-slate-700 hidden"
+            >
+              <label class="block text-[11px] font-semibold text-amber-300 mb-1"
+                >Monto de la Recompensa</label
+              >
+              <input
+                type="text"
+                id="inputRewardAmount"
+                placeholder="Ej: C$ 2,000 / $100"
+                class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3 py-1.5 text-xs text-amber-200 placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              />
+            </div>
+          </div>
+
+          <div class="pt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onclick="closeCaseModal()"
+              class="w-1/3 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="w-2/3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm"
+            >
+              Guardar Ficha
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <!-- ======================================================== -->
-  <!-- MODAL / DRAWER: LISTA DE PINES REGISTRADOS               -->
-  <!-- ======================================================== -->
-  <div id="pinsDrawer" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 max-h-[85vh] flex flex-col shadow-2xl">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-map-pin text-rose-400"></i> Puntos Clave de la Búsqueda
-          </h2>
-          <p class="text-xs text-slate-400">Avistamientos, carteles y última vez visto</p>
+    <!-- ======================================================== -->
+    <!-- MODAL / DRAWER: LISTA DE PINES (OPTIMIZADO PARA MÓVIL)   -->
+    <!-- ======================================================== -->
+    <div
+      id="pinsDrawer"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md flex flex-col max-h-[80vh] shadow-2xl overflow-hidden"
+      >
+        <!-- Encabezado fijo -->
+        <div
+          class="flex items-center justify-between px-4 py-3 border-b border-slate-800 shrink-0"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-sm border border-rose-500/30"
+            >
+              <i class="fa-solid fa-map-pin"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white">Pines de la Búsqueda</h2>
+              <p class="text-[11px] text-slate-400">
+                Puntos registrados en el mapa
+              </p>
+            </div>
+          </div>
+          <button
+            onclick="closePinsDrawer()"
+            class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs"
+          >
+            ✕
+          </button>
         </div>
-        <button onclick="closePinsDrawer()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-sm">✕</button>
-      </div>
 
-      <div id="pinsListContainer" class="flex-1 overflow-y-auto py-3 space-y-2 divide-y divide-slate-800/50">
-        <!-- Generado dinámicamente -->
-      </div>
+        <!-- Lista con scroll independiente y sin desbordes -->
+        <div
+          id="pinsListContainer"
+          class="flex-1 min-h-0 overflow-y-auto px-4 py-2 divide-y divide-slate-800/60 overscroll-contain"
+        >
+          <!-- Render dinámico de pines -->
+        </div>
 
-      <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-        <button onclick="clearAllPins()" class="text-xs text-rose-400 hover:text-rose-300 px-3 py-2 rounded-xl bg-rose-950/40 border border-rose-900/50 font-semibold">
-          <i class="fa-solid fa-trash-can mr-1"></i> Borrar todos
-        </button>
-        <button onclick="closePinsDrawer()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
-          Cerrar
-        </button>
+        <!-- Pie fijo con acciones -->
+        <div
+          class="p-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between gap-2 shrink-0 pb-safe"
+        >
+          <button
+            onclick="confirmClearAllPins()"
+            class="text-xs text-rose-400 hover:text-rose-300 px-3 py-2 rounded-xl bg-rose-950/40 border border-rose-900/50 font-semibold flex items-center gap-1.5 active:scale-95 transition"
+          >
+            <i class="fa-solid fa-trash-can text-xs"></i> Borrar todos
+          </button>
+          <button
+            onclick="closePinsDrawer()"
+            class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs active:scale-95 transition"
+          >
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- NOTIFICACIÓN TOAST -->
-  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 transform -translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 bg-slate-900 text-white border border-slate-700">
-    <i class="fa-solid fa-circle-check text-emerald-400"></i>
-    <span id="toastMsg">Mensaje</span>
-  </div>
+    <!-- ======================================================== -->
+    <!-- MODAL MODERNO: AÑADIR PIN / MARCADOR (SIN ALERT FEO)    -->
+    <!-- ======================================================== -->
+    <div
+      id="addPinModal"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-4 shadow-2xl max-h-[85vh] overflow-y-auto"
+      >
+        <!-- Header con Icono del Pin seleccionado -->
+        <div
+          class="flex items-center justify-between pb-3 border-b border-slate-800"
+        >
+          <div class="flex items-center gap-2.5">
+            <div
+              id="addPinModalIconBadge"
+              class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-base shadow"
+            >
+              <i id="addPinModalIcon" class="fa-solid fa-paw"></i>
+            </div>
+            <div>
+              <h3 id="addPinModalTitle" class="text-sm font-bold text-white">
+                Marcar Avistamiento
+              </h3>
+              <p id="addPinModalSubtitle" class="text-[11px] text-slate-400">
+                Registra una pista clave en Granada
+              </p>
+            </div>
+          </div>
+          <button
+            onclick="closeAddPinModal()"
+            class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs"
+          >
+            ✕
+          </button>
+        </div>
 
-  <!-- ======================================================== -->
-  <!-- JAVASCRIPT DE LA APLICACIÓN                              -->
-  <!-- ======================================================== -->
-  <script>
-    // Puntos icónicos de Granada, Nicaragua
-    const GRANADA_COORDS = {
-      colon: [11.9299, -85.9560], // Parque Central Colón
-      calzada: [11.9304, -85.9515], // Calle La Calzada
-      malecon: [11.9328, -85.9442], // Malecón Lago Cocibolca
-      xalteva: [11.9288, -85.9620]  // Iglesia y Parque Xalteva
-    };
-
-    // Coordenadas para la simulación de moto por Granada
-    const SIMULATION_ROUTE = [
-      [11.9299, -85.9560],
-      [11.9300, -85.9540],
-      [11.9302, -85.9520],
-      [11.9305, -85.9490],
-      [11.9312, -85.9460],
-      [11.9328, -85.9442],
-      [11.9345, -85.9450],
-      [11.9330, -85.9480],
-      [11.9315, -85.9525],
-      [11.9299, -85.9560],
-      [11.9292, -85.9585],
-      [11.9288, -85.9620],
-      [11.9280, -85.9650],
-      [11.9265, -85.9625],
-      [11.9288, -85.9580],
-      [11.9299, -85.9560]
-    ];
-
-    let map = null;
-    let mapTheme = 'dark'; // 'dark' o 'day'
-
-    let userMarker = null;
-    let searchRadiusCircle = null;
-    let currentRadiusMeters = 1000; // 1km por defecto
-
-    let liveRoutePolyline = null;
-    let liveCoordinates = [];
-    let pastRoutesPolylines = [];
-    let isPastRoutesVisible = true;
-
-    // Tracking
-    let isTracking = false;
-    let isPaused = false;
-    let watchId = null;
-    let wakeLock = null;
-    let searchStartTime = null;
-    let searchElapsedSeconds = 0;
-    let searchTimerInterval = null;
-    let lastKnownPosition = null;
-    let totalDistanceKm = 0;
-    let currentSpeedKmh = 0;
-
-    // Simulación
-    let isSimulating = false;
-    let simIndex = 0;
-    let simInterval = null;
-
-    // Pines
-    let pins = [];
-    let pendingPinType = null;
-
-    // Caso
-    let dogCase = {
-      name: 'Rocky',
-      breed: 'Mestizo café claro, orejas caídas, collar rojo',
-      zone: 'Granada: Sector Xalteva / La Calzada',
-      phone: '88888888',
-      photo: '',
-      hasReward: true,
-      rewardAmount: 'C$ 2,000'
-    };
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadSavedData();
-      initMap();
-      renderCaseHeader();
-      updatePinsUI();
-      loadPastRoutesToMap();
-    });
-
-    // ==========================================
-    // INICIALIZACIÓN DEL MAPA (100% GRATIS, SIN API KEY)
-    // ==========================================
-    function initMap() {
-      // Usar OpenStreetMap oficial (100% libre, sin watermarks)
-      const mapContainer = document.getElementById('map');
-      mapContainer.classList.add('dark-map');
-
-      map = L.map('map', {
-        center: GRANADA_COORDS.colon,
-        zoom: 15,
-        zoomControl: false,
-        attributionControl: true
-      });
-
-      // Capa OpenStreetMap 100% gratuita
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
-
-      // Trazo en vivo de la moto (Verde Esmeralda brillante)
-      liveRoutePolyline = L.polyline([], {
-        color: '#10b981',
-        weight: 6,
-        opacity: 0.95,
-        lineJoin: 'round',
-        lineCap: 'round'
-      }).addTo(map);
-
-      // Listener para marcar pin tocando el mapa
-      map.on('click', (e) => {
-        if (pendingPinType) {
-          dropPinAtCoordinates(e.latlng.lat, e.latlng.lng, pendingPinType);
-          cancelPinPlacement();
-        }
-      });
-
-      // Círculo de búsqueda
-      updateSearchRadiusCircle(GRANADA_COORDS.colon);
-
-      // Obtener GPS inicial si está disponible
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            updateUserMarker(lat, lng);
-            const dist = getDistanceFromLatLonInKm(lat, lng, GRANADA_COORDS.colon[0], GRANADA_COORDS.colon[1]);
-            if (dist < 15) {
-              map.setView([lat, lng], 16);
-              updateSearchRadiusCircle([lat, lng]);
-            }
-          },
-          () => {},
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      }
-    }
-
-    function toggleMapTheme() {
-      const container = document.getElementById('map');
-      const icon = document.getElementById('themeIcon');
-      if (mapTheme === 'dark') {
-        mapTheme = 'day';
-        container.classList.remove('dark-map');
-        container.classList.add('day-map');
-        icon.className = 'fa-solid fa-sun text-amber-500 text-base';
-        showToast('Modo Sol (Alto Contraste) activado');
-      } else {
-        mapTheme = 'dark';
-        container.classList.remove('day-map');
-        container.classList.add('dark-map');
-        icon.className = 'fa-solid fa-moon text-amber-300 text-base';
-        showToast('Modo Noche (Ahorro Batería) activado');
-      }
-    }
-
-    function updateUserMarker(lat, lng) {
-      lastKnownPosition = [lat, lng];
-      const motoHtml = `
-        <div class="relative flex items-center justify-center w-8 h-8 -ml-4 -mt-4">
-          <div class="absolute inset-0 rounded-full bg-emerald-500/40 animate-ping"></div>
-          <div class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white shadow-xl flex items-center justify-center text-slate-950 font-black text-xs">
-            <i class="fa-solid fa-motorcycle"></i>
+        <!-- Selector de Ubicación: GPS vs Tocar Mapa -->
+        <div class="mt-3">
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5"
+            >¿Dónde deseas colocarlo?</label
+          >
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onclick="selectPinPlacementMode('gps')"
+              id="btnPinLocationGPS"
+              class="p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-300 text-xs font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition"
+            >
+              <i class="fa-solid fa-crosshairs text-base text-emerald-400"></i>
+              <span>Mi Ubicación (Moto)</span>
+            </button>
+            <button
+              type="button"
+              onclick="selectPinPlacementMode('map')"
+              id="btnPinLocationMap"
+              class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-300 text-xs font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition"
+            >
+              <i class="fa-solid fa-hand-pointer text-base text-amber-400"></i>
+              <span>Tocar en el Mapa</span>
+            </button>
           </div>
         </div>
-      `;
 
-      const icon = L.divIcon({
-        className: 'moto-icon',
-        html: motoHtml,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+        <!-- Campo de Nota / Descripción -->
+        <div class="mt-3">
+          <label class="block text-xs font-semibold text-slate-300 mb-1"
+            >Nota o detalle rápido</label
+          >
+          <input
+            type="text"
+            id="inputPinNote"
+            placeholder="Ej: Visto corriendo hacia La Calzada..."
+            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+          />
+
+          <!-- Chips de Notas Rápidas para escribir con 1 solo toque -->
+          <div
+            id="pinQuickChips"
+            class="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar py-0.5"
+          >
+            <!-- Generados dinámicamente según el tipo -->
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div
+          class="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2"
+        >
+          <button
+            type="button"
+            onclick="closeAddPinModal()"
+            class="w-1/3 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs active:scale-95 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onclick="confirmSavePin()"
+            class="w-2/3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 active:scale-95 transition shadow-lg shadow-emerald-950/40"
+          >
+            <i class="fa-solid fa-check"></i>
+            <span id="btnSavePinText">Guardar Pin</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL DE CONFIRMACIÓN MODERNO (REEMPLAZO DE ALERT/CONFIRM)-->
+    <!-- ======================================================== -->
+    <div
+      id="customConfirmModal"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-4 text-center shadow-2xl"
+      >
+        <div
+          id="confirmModalIconWrapper"
+          class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl mx-auto mb-3"
+        >
+          <i id="confirmModalIcon" class="fa-solid fa-circle-question"></i>
+        </div>
+        <h3 id="confirmModalTitle" class="text-sm font-bold text-white mb-1">
+          ¿Estás seguro?
+        </h3>
+        <p id="confirmModalText" class="text-xs text-slate-400 mb-4 px-2">
+          Esta acción no se puede deshacer.
+        </p>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick="closeCustomConfirm(false)"
+            class="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs active:scale-95 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onclick="closeCustomConfirm(true)"
+            id="btnConfirmModalAction"
+            class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs active:scale-95 transition"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL CELEBRATORIO: ¡PERRITO ENCONTRADO!                 -->
+    <!-- ======================================================== -->
+    <div
+      id="foundSuccessModal"
+      class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden transition-opacity"
+    >
+      <div
+        class="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl w-full max-w-sm p-5 text-center shadow-2xl shadow-emerald-950/60"
+      >
+        <div
+          class="w-16 h-16 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-emerald-500/40 animate-bounce"
+        >
+          <i class="fa-solid fa-heart"></i>
+        </div>
+        <h3 class="text-lg font-black text-white mb-1">
+          ¡PERRITO ENCONTRADO! 🎉
+        </h3>
+        <p class="text-xs text-slate-300 mb-4">
+          Excelente trabajo de rescate en Granada. Comunícate de inmediato con
+          el dueño.
+        </p>
+
+        <div class="space-y-2">
+          <a
+            id="btnCallSuccess"
+            href="tel:+50588888888"
+            class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow transition"
+          >
+            <i class="fa-solid fa-phone"></i>
+            <span>Llamar al Dueño Ahora</span>
+          </a>
+          <button
+            type="button"
+            onclick="
+              downloadRouteMapCapture();
+              closeFoundSuccessModal();
+            "
+            class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition"
+          >
+            <i class="fa-solid fa-camera"></i>
+            <span>Descargar Foto del Rescate</span>
+          </button>
+          <button
+            type="button"
+            onclick="closeFoundSuccessModal()"
+            class="w-full py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white font-semibold text-xs"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICACIÓN TOAST -->
+    <div
+      id="toast"
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 transform -translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 bg-slate-900 text-white border border-slate-700"
+    >
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span id="toastMsg">Mensaje</span>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- JAVASCRIPT DE LA APLICACIÓN                              -->
+    <!-- ======================================================== -->
+    <script>
+      // Puntos icónicos de Granada, Nicaragua
+      const GRANADA_COORDS = {
+        colon: [11.9299, -85.9560], // Parque Central Colón
+        calzada: [11.9304, -85.9515], // Calle La Calzada
+        malecon: [11.9328, -85.9442], // Malecón Lago Cocibolca
+        xalteva: [11.9288, -85.9620]  // Iglesia y Parque Xalteva
+      };
+
+      // Coordenadas para la simulación de moto por Granada
+      const SIMULATION_ROUTE = [
+        [11.9299, -85.9560],
+        [11.9300, -85.9540],
+        [11.9302, -85.9520],
+        [11.9305, -85.9490],
+        [11.9312, -85.9460],
+        [11.9328, -85.9442],
+        [11.9345, -85.9450],
+        [11.9330, -85.9480],
+        [11.9315, -85.9525],
+        [11.9299, -85.9560],
+        [11.9292, -85.9585],
+        [11.9288, -85.9620],
+        [11.9280, -85.9650],
+        [11.9265, -85.9625],
+        [11.9288, -85.9580],
+        [11.9299, -85.9560]
+      ];
+
+      let map = null;
+      let mapTheme = 'dark'; // 'dark' o 'day'
+
+      let userMarker = null;
+      let searchRadiusCircle = null;
+      let currentRadiusMeters = 1000; // 1km por defecto
+
+      let liveRoutePolyline = null;
+      let liveCoordinates = [];
+      let pastRoutesPolylines = [];
+      let isPastRoutesVisible = true;
+
+      // Tracking
+      let isTracking = false;
+      let isPaused = false;
+      let watchId = null;
+      let wakeLock = null;
+      let searchStartTime = null;
+      let searchElapsedSeconds = 0;
+      let searchTimerInterval = null;
+      let lastKnownPosition = null;
+      let totalDistanceKm = 0;
+      let currentSpeedKmh = 0;
+
+      // Simulación
+      let isSimulating = false;
+      let simIndex = 0;
+      let simInterval = null;
+
+      // Pines
+      let pins = [];
+      let pendingPinType = null;
+
+      // Caso
+      let dogCase = {
+        name: 'Rocky',
+        breed: 'Mestizo café claro, orejas caídas, collar rojo',
+        zone: 'Granada: Sector Xalteva / La Calzada',
+        phone: '88888888',
+        photo: '',
+        hasReward: true,
+        rewardAmount: 'C$ 2,000'
+      };
+
+      window.addEventListener('DOMContentLoaded', () => {
+        loadSavedData();
+        initMap();
+        renderCaseHeader();
+        updatePinsUI();
+        loadPastRoutesToMap();
       });
 
-      if (!userMarker) {
-        userMarker = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
-      } else {
-        userMarker.setLatLng([lat, lng]);
-      }
-    }
+      // ==========================================
+      // INICIALIZACIÓN DEL MAPA (100% GRATIS, SIN API KEY)
+      // ==========================================
+      function initMap() {
+        // Usar OpenStreetMap oficial (100% libre, sin watermarks)
+        const mapContainer = document.getElementById('map');
+        mapContainer.classList.add('dark-map');
 
-    function updateSearchRadiusCircle(centerCoords) {
-      if (!map) return;
-      if (searchRadiusCircle) {
-        map.removeLayer(searchRadiusCircle);
-        searchRadiusCircle = null;
-      }
-
-      if (currentRadiusMeters > 0 && centerCoords) {
-        searchRadiusCircle = L.circle(centerCoords, {
-          radius: currentRadiusMeters,
-          color: '#f43f5e',
-          weight: 2,
-          opacity: 0.85,
-          fillColor: '#f43f5e',
-          fillOpacity: 0.08,
-          dashArray: '6, 8',
-          className: 'pulse-radius'
-        }).addTo(map);
-      }
-    }
-
-    function setSearchRadius(meters) {
-      currentRadiusMeters = meters;
-      [0, 500, 1000, 2000].forEach(m => {
-        const btn = document.getElementById(`radBtn${m}`);
-        if (btn) {
-          if (m === meters) {
-            btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-slate-950 transition';
-          } else {
-            btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition';
-          }
-        }
-      });
-
-      let center = GRANADA_COORDS.colon;
-      const lastSeenPin = pins.find(p => p.type === 'last_seen');
-      if (lastSeenPin) center = [lastSeenPin.lat, lastSeenPin.lng];
-      else if (lastKnownPosition) center = lastKnownPosition;
-
-      updateSearchRadiusCircle(center);
-      showToast(meters === 0 ? 'Radio desactivado' : `Radio: ${meters >= 1000 ? (meters/1000) + ' km' : meters + ' m'}`);
-    }
-
-    // ==========================================
-    // RASTREO GPS EN MOTO
-    // ==========================================
-    function handleMainTrackingToggle() {
-      if (!isTracking) startTracking();
-      else if (!isPaused) pauseTracking();
-      else resumeTracking();
-    }
-
-    function startTracking() {
-      if (!navigator.geolocation) {
-        alert("Tu navegador no soporta Geolocation API.");
-        return;
-      }
-
-      if (isSimulating) stopSimulation();
-      requestWakeLock();
-
-      isTracking = true;
-      isPaused = false;
-      searchStartTime = Date.now() - (searchElapsedSeconds * 1000);
-
-      clearInterval(searchTimerInterval);
-      searchTimerInterval = setInterval(updateTimerHUD, 1000);
-
-      updateTrackingButtonUI();
-
-      document.getElementById('btnFinishTracking').classList.remove('hidden');
-      document.getElementById('btnClearCurrentRoute').classList.remove('hidden');
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-      document.getElementById('gpsStatusText').innerText = 'Rastreando en vivo';
-
-      watchId = navigator.geolocation.watchPosition(
-        handleGeolocationSuccess,
-        handleGeolocationError,
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-      );
-
-      showToast('¡Búsqueda iniciada! GPS activo');
-    }
-
-    function pauseTracking() {
-      isPaused = true;
-      clearInterval(searchTimerInterval);
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-      updateTrackingButtonUI();
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-amber-400';
-      document.getElementById('gpsStatusText').innerText = 'Pausado';
-      showToast('Búsqueda pausada');
-    }
-
-    function resumeTracking() {
-      isPaused = false;
-      searchStartTime = Date.now() - (searchElapsedSeconds * 1000);
-      searchTimerInterval = setInterval(updateTimerHUD, 1000);
-      requestWakeLock();
-
-      watchId = navigator.geolocation.watchPosition(
-        handleGeolocationSuccess,
-        handleGeolocationError,
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-      );
-
-      updateTrackingButtonUI();
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-      document.getElementById('gpsStatusText').innerText = 'Rastreando en vivo';
-      showToast('Búsqueda reanudada');
-    }
-
-    function handleGeolocationSuccess(pos) {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const speed = pos.coords.speed;
-
-      if (speed !== null && !isNaN(speed) && speed >= 0) {
-        currentSpeedKmh = Math.round(speed * 3.6);
-      } else {
-        currentSpeedKmh = 0;
-      }
-      document.getElementById('metricSpeed').innerText = currentSpeedKmh;
-
-      if (lastKnownPosition) {
-        const d = getDistanceFromLatLonInKm(lastKnownPosition[0], lastKnownPosition[1], lat, lng);
-        if (d > 0.003) {
-          totalDistanceKm += d;
-          document.getElementById('metricDistance').innerText = totalDistanceKm.toFixed(2);
-        }
-      }
-
-      liveCoordinates.push([lat, lng]);
-      liveRoutePolyline.setLatLngs(liveCoordinates);
-      updateUserMarker(lat, lng);
-      map.panTo([lat, lng], { animate: true });
-    }
-
-    function handleGeolocationError(err) {
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-rose-500';
-      document.getElementById('gpsStatusText').innerText = 'Error de GPS';
-      showToast('No se pudo obtener señal GPS');
-    }
-
-    function finishCurrentSearch() {
-      const confirmSave = confirm(`¿Finalizar y guardar esta ruta?\nDistancia: ${totalDistanceKm.toFixed(2)} km\nTiempo: ${formatTime(searchElapsedSeconds)}`);
-      if (!confirmSave) return;
-
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-      clearInterval(searchTimerInterval);
-      releaseWakeLock();
-
-      isTracking = false;
-      isPaused = false;
-
-      if (liveCoordinates.length >= 2) {
-        saveRouteToHistory({
-          id: 'route_' + Date.now(),
-          date: new Date().toLocaleDateString('es-NI', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          coordinates: [...liveCoordinates],
-          distanceKm: totalDistanceKm.toFixed(2),
-          seconds: searchElapsedSeconds
+        map = L.map('map', {
+          center: GRANADA_COORDS.colon,
+          zoom: 15,
+          zoomControl: false,
+          attributionControl: true
         });
-      }
 
-      clearCurrentTrack(false);
-      updateTrackingButtonUI();
+        // Capa OpenStreetMap 100% gratuita
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          crossOrigin: true,
+          attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
 
-      document.getElementById('btnFinishTracking').classList.add('hidden');
-      document.getElementById('btnClearCurrentRoute').classList.add('hidden');
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
-      document.getElementById('gpsStatusText').innerText = 'Ruta guardada';
-      showToast('¡Ruta guardada en el mapa!');
-    }
+        // Trazo en vivo de la moto (Verde Esmeralda brillante)
+        liveRoutePolyline = L.polyline([], {
+          color: '#10b981',
+          weight: 6,
+          opacity: 0.95,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(map);
 
-    function clearCurrentTrack(askConfirm = true) {
-      if (askConfirm) {
-        if (!confirm("¿Deseas reiniciar el recorrido actual?")) return;
-      }
-      liveCoordinates = [];
-      liveRoutePolyline.setLatLngs([]);
-      totalDistanceKm = 0;
-      searchElapsedSeconds = 0;
-      currentSpeedKmh = 0;
-      document.getElementById('metricSpeed').innerText = '0';
-      document.getElementById('metricDistance').innerText = '0.0';
-      document.getElementById('metricTime').innerText = '00:00';
-      showToast('Trazado reiniciado');
-    }
+        // Listener para marcar pin tocando el mapa
+        map.on('click', (e) => {
+          if (pendingPinType) {
+            dropPinAtCoordinates(e.latlng.lat, e.latlng.lng, pendingPinType);
+            cancelPinPlacement();
+          }
+        });
 
-    function updateTimerHUD() {
-      searchElapsedSeconds = Math.floor((Date.now() - searchStartTime) / 1000);
-      document.getElementById('metricTime').innerText = formatTime(searchElapsedSeconds);
-    }
+        // Círculo de búsqueda
+        updateSearchRadiusCircle(GRANADA_COORDS.colon);
 
-    function formatTime(totalSec) {
-      const min = Math.floor(totalSec / 60);
-      const sec = totalSec % 60;
-      return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-    }
-
-    function updateTrackingButtonUI() {
-      const btn = document.getElementById('btnMainTracking');
-      const icon = document.getElementById('btnTrackingIcon');
-      const text = document.getElementById('btnTrackingText');
-
-      if (!isTracking) {
-        btn.className = 'flex-1 py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition';
-        icon.className = 'fa-solid fa-play text-base';
-        text.innerText = 'Iniciar Búsqueda';
-      } else if (!isPaused) {
-        btn.className = 'flex-1 py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 transition';
-        icon.className = 'fa-solid fa-pause text-base';
-        text.innerText = 'Pausar Búsqueda';
-      } else {
-        btn.className = 'flex-1 py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition';
-        icon.className = 'fa-solid fa-play text-base';
-        text.innerText = 'Reanudar Búsqueda';
-      }
-    }
-
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-          document.getElementById('wakeLockBadge').classList.remove('text-slate-500');
-          document.getElementById('wakeLockBadge').classList.add('text-amber-400');
+        // Obtener GPS inicial si está disponible
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              updateUserMarker(lat, lng);
+              const dist = getDistanceFromLatLonInKm(lat, lng, GRANADA_COORDS.colon[0], GRANADA_COORDS.colon[1]);
+              if (dist < 15) {
+                map.setView([lat, lng], 16);
+                updateSearchRadiusCircle([lat, lng]);
+              }
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 5000 }
+          );
         }
-      } catch (err) {}
-    }
-
-    function releaseWakeLock() {
-      if (wakeLock !== null) {
-        wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
-        document.getElementById('wakeLockBadge').classList.remove('text-amber-400');
-        document.getElementById('wakeLockBadge').classList.add('text-slate-500');
-      }
-    }
-
-    // ==========================================
-    // HISTORIAL DE RUTAS PREVIAS
-    // ==========================================
-    function saveRouteToHistory(routeObj) {
-      let history = getStoredRoutes();
-      history.push(routeObj);
-      localStorage.setItem('huellagps_history_routes', JSON.stringify(history));
-      drawSinglePastRoute(routeObj);
-    }
-
-    function getStoredRoutes() {
-      try {
-        return JSON.parse(localStorage.getItem('huellagps_history_routes')) || [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function loadPastRoutesToMap() {
-      pastRoutesPolylines.forEach(pl => map.removeLayer(pl));
-      pastRoutesPolylines = [];
-      const routes = getStoredRoutes();
-      routes.forEach(route => drawSinglePastRoute(route));
-    }
-
-    function drawSinglePastRoute(route) {
-      if (!route.coordinates || route.coordinates.length < 2) return;
-      const pl = L.polyline(route.coordinates, {
-        color: '#0284c7', // Azul cielo discreto
-        weight: 4,
-        opacity: 0.65,
-        dashArray: '8, 6',
-        lineJoin: 'round'
-      }).addTo(map);
-
-      pl.bindPopup(`
-        <div class="text-xs p-1 text-slate-900 font-sans">
-          <div class="font-bold text-sky-700"><i class="fa-solid fa-route"></i> Calle ya recorrida</div>
-          <div class="text-[11px] text-slate-600 mt-0.5">${route.date}</div>
-          <div class="text-[11px] font-mono mt-0.5">Distancia: <b>${route.distanceKm} km</b></div>
-        </div>
-      `);
-
-      pastRoutesPolylines.push(pl);
-    }
-
-    function togglePastRoutes() {
-      isPastRoutesVisible = !isPastRoutesVisible;
-      pastRoutesPolylines.forEach(pl => {
-        if (isPastRoutesVisible) map.addLayer(pl);
-        else map.removeLayer(pl);
-      });
-      showToast(isPastRoutesVisible ? 'Mostrando calles ya recorridas' : 'Ocultando historial');
-    }
-
-    // ==========================================
-    // MODO SIMULAR MOTO POR GRANADA
-    // ==========================================
-    function toggleSimulation() {
-      if (isSimulating) stopSimulation();
-      else startSimulation();
-    }
-
-    function startSimulation() {
-      if (isTracking) {
-        alert("Pausa o finaliza la búsqueda real primero.");
-        return;
       }
 
-      isSimulating = true;
-      simIndex = 0;
-      totalDistanceKm = 0;
-      searchElapsedSeconds = 0;
-      liveCoordinates = [];
-      liveRoutePolyline.setLatLngs([]);
+      function toggleMapTheme() {
+        const container = document.getElementById('map');
+        const icon = document.getElementById('themeIcon');
+        if (mapTheme === 'dark') {
+          mapTheme = 'day';
+          container.classList.remove('dark-map');
+          container.classList.add('day-map');
+          icon.className = 'fa-solid fa-sun text-amber-500 text-base';
+          showToast('Modo Sol (Alto Contraste) activado');
+        } else {
+          mapTheme = 'dark';
+          container.classList.remove('day-map');
+          container.classList.add('dark-map');
+          icon.className = 'fa-solid fa-moon text-amber-300 text-base';
+          showToast('Modo Noche (Ahorro Batería) activado');
+        }
+      }
 
-      const btn = document.getElementById('btnSimulate');
-      btn.classList.add('bg-amber-500', 'text-slate-950');
-      btn.querySelector('i').className = 'fa-solid fa-stop text-slate-950 text-base';
+      function updateUserMarker(lat, lng) {
+        lastKnownPosition = [lat, lng];
+        const motoHtml = `
+          <div class="relative flex items-center justify-center w-8 h-8 -ml-4 -mt-4">
+            <div class="absolute inset-0 rounded-full bg-emerald-500/40 animate-ping"></div>
+            <div class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white shadow-xl flex items-center justify-center text-slate-950 font-black text-xs">
+              <i class="fa-solid fa-motorcycle"></i>
+            </div>
+          </div>
+        `;
 
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-      document.getElementById('gpsStatusText').innerText = 'Simulación activa';
-      document.getElementById('btnFinishTracking').classList.remove('hidden');
-      document.getElementById('btnClearCurrentRoute').classList.remove('hidden');
+        const icon = L.divIcon({
+          className: 'moto-icon',
+          html: motoHtml,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
 
-      showToast('Simulando moto por Parque Colón, Calzada y Malecón');
+        if (!userMarker) {
+          userMarker = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+        } else {
+          userMarker.setLatLng([lat, lng]);
+        }
+      }
 
-      const firstPt = SIMULATION_ROUTE[0];
-      map.setView(firstPt, 16);
-      updateUserMarker(firstPt[0], firstPt[1]);
+      function updateSearchRadiusCircle(centerCoords) {
+        if (!map) return;
+        if (searchRadiusCircle) {
+          map.removeLayer(searchRadiusCircle);
+          searchRadiusCircle = null;
+        }
 
-      simInterval = setInterval(() => {
-        if (simIndex >= SIMULATION_ROUTE.length) simIndex = 0;
-        const pt = SIMULATION_ROUTE[simIndex];
-        const lat = pt[0];
-        const lng = pt[1];
+        if (currentRadiusMeters > 0 && centerCoords) {
+          searchRadiusCircle = L.circle(centerCoords, {
+            radius: currentRadiusMeters,
+            color: '#f43f5e',
+            weight: 2,
+            opacity: 0.85,
+            fillColor: '#f43f5e',
+            fillOpacity: 0.08,
+            dashArray: '6, 8',
+            className: 'pulse-radius'
+          }).addTo(map);
+        }
+      }
 
-        currentSpeedKmh = Math.floor(25 + Math.random() * 10);
+      function setSearchRadius(meters) {
+        currentRadiusMeters = meters;
+        [0, 500, 1000, 2000].forEach(m => {
+          const btn = document.getElementById(`radBtn${m}`);
+          if (btn) {
+            if (m === meters) {
+              btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-slate-950 transition';
+            } else {
+              btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 hover:text-white transition';
+            }
+          }
+        });
+
+        let center = GRANADA_COORDS.colon;
+        const lastSeenPin = pins.find(p => p.type === 'last_seen');
+        if (lastSeenPin) center = [lastSeenPin.lat, lastSeenPin.lng];
+        else if (lastKnownPosition) center = lastKnownPosition;
+
+        updateSearchRadiusCircle(center);
+        showToast(meters === 0 ? 'Radio desactivado' : `Radio: ${meters >= 1000 ? (meters/1000) + ' km' : meters + ' m'}`);
+      }
+
+      // ==========================================
+      // RASTREO GPS EN MOTO
+      // ==========================================
+      function handleMainTrackingToggle() {
+        if (!isTracking) startTracking();
+        else if (!isPaused) pauseTracking();
+        else resumeTracking();
+      }
+
+      function startTracking() {
+        if (!navigator.geolocation) {
+          showToast("Tu navegador no soporta Geolocation API.");
+          return;
+        }
+
+        if (isSimulating) stopSimulation();
+        requestWakeLock();
+
+        isTracking = true;
+        isPaused = false;
+        searchStartTime = Date.now() - (searchElapsedSeconds * 1000);
+
+        clearInterval(searchTimerInterval);
+        searchTimerInterval = setInterval(updateTimerHUD, 1000);
+
+        updateTrackingButtonUI();
+
+        document.getElementById('btnFinishTracking').classList.remove('hidden');
+        document.getElementById('btnClearCurrentRoute').classList.remove('hidden');
+        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+        document.getElementById('gpsStatusText').innerText = 'Rastreando en vivo';
+
+        watchId = navigator.geolocation.watchPosition(
+          handleGeolocationSuccess,
+          handleGeolocationError,
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+        );
+
+        showToast('¡Búsqueda iniciada! GPS activo');
+      }
+
+      function pauseTracking() {
+        isPaused = true;
+        clearInterval(searchTimerInterval);
+        if (watchId) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+        updateTrackingButtonUI();
+        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-amber-400';
+        document.getElementById('gpsStatusText').innerText = 'Pausado';
+        showToast('Búsqueda pausada');
+      }
+
+      function resumeTracking() {
+        isPaused = false;
+        searchStartTime = Date.now() - (searchElapsedSeconds * 1000);
+        searchTimerInterval = setInterval(updateTimerHUD, 1000);
+        requestWakeLock();
+
+        watchId = navigator.geolocation.watchPosition(
+          handleGeolocationSuccess,
+          handleGeolocationError,
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+        );
+
+        updateTrackingButtonUI();
+        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+        document.getElementById('gpsStatusText').innerText = 'Rastreando en vivo';
+        showToast('Búsqueda reanudada');
+      }
+
+      function handleGeolocationSuccess(pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const speed = pos.coords.speed;
+
+        if (speed !== null && !isNaN(speed) && speed >= 0) {
+          currentSpeedKmh = Math.round(speed * 3.6);
+        } else {
+          currentSpeedKmh = 0;
+        }
         document.getElementById('metricSpeed').innerText = currentSpeedKmh;
 
         if (lastKnownPosition) {
           const d = getDistanceFromLatLonInKm(lastKnownPosition[0], lastKnownPosition[1], lat, lng);
-          totalDistanceKm += d;
-          document.getElementById('metricDistance').innerText = totalDistanceKm.toFixed(2);
+          if (d > 0.003) {
+            totalDistanceKm += d;
+            document.getElementById('metricDistance').innerText = totalDistanceKm.toFixed(2);
+          }
         }
-
-        searchElapsedSeconds += 2;
-        document.getElementById('metricTime').innerText = formatTime(searchElapsedSeconds);
 
         liveCoordinates.push([lat, lng]);
         liveRoutePolyline.setLatLngs(liveCoordinates);
         updateUserMarker(lat, lng);
         map.panTo([lat, lng], { animate: true });
+      }
 
-        simIndex++;
-      }, 1400);
-    }
+      function handleGeolocationError(err) {
+        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-rose-500';
+        document.getElementById('gpsStatusText').innerText = 'Error de GPS';
+        showToast('No se pudo obtener señal GPS');
+      }
 
-    function stopSimulation() {
-      isSimulating = false;
-      clearInterval(simInterval);
-      simInterval = null;
+      function finishCurrentSearch() {
+        showCustomConfirm({
+          title: '¿Finalizar búsqueda actual?',
+          text: `Distancia: ${totalDistanceKm.toFixed(2)} km  •  Tiempo: ${formatTime(searchElapsedSeconds)}. Se descargará la foto del recorrido completo.`,
+          icon: 'fa-flag-checkered',
+          confirmText: 'Finalizar y Descargar',
+          confirmBg: 'bg-emerald-600 hover:bg-emerald-500',
+          onConfirm: () => {
+            if (watchId) {
+              navigator.geolocation.clearWatch(watchId);
+              watchId = null;
+            }
+            clearInterval(searchTimerInterval);
+            releaseWakeLock();
 
-      const btn = document.getElementById('btnSimulate');
-      btn.classList.remove('bg-amber-500', 'text-slate-950');
-      btn.querySelector('i').className = 'fa-solid fa-motorcycle text-amber-400 text-base';
+            isTracking = false;
+            isPaused = false;
 
-      document.getElementById('metricSpeed').innerText = '0';
-      document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
-      document.getElementById('gpsStatusText').innerText = 'GPS Listo';
-      showToast('Simulación detenida');
-    }
+            if (liveCoordinates.length >= 2) {
+              saveRouteToHistory({
+                id: 'route_' + Date.now(),
+                date: new Date().toLocaleDateString('es-NI', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                coordinates: [...liveCoordinates],
+                distanceKm: totalDistanceKm.toFixed(2),
+                seconds: searchElapsedSeconds
+              });
+            }
 
-    // ==========================================
-    // PINES RÁPIDOS
-    // ==========================================
-    function prepareAddPin(type) {
-      pendingPinType = type;
-      const banner = document.getElementById('pinTapBanner');
-      const text = document.getElementById('pinTapBannerText');
-      banner.classList.remove('hidden');
+            downloadRouteMapCapture();
 
-      const names = {
-        last_seen: 'Última vez visto',
-        sighting: 'Avistamiento',
-        poster: 'Cartel pegado',
-        found: '¡Encontrado!'
-      };
+            clearCurrentTrack(false);
+            updateTrackingButtonUI();
 
-      text.innerText = `Toca en el mapa para marcar: ${names[type] || 'Punto'}`;
+            document.getElementById('btnFinishTracking').classList.add('hidden');
+            document.getElementById('btnClearCurrentRoute').classList.add('hidden');
+            document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
+            document.getElementById('gpsStatusText').innerText = 'Ruta guardada';
+            showToast('¡Ruta guardada en el mapa!');
+          }
+        });
+      }
 
-      if (lastKnownPosition) {
-        const dropHere = confirm(`¿Colocar marcador de "${names[type]}" en la posición actual de la moto?\n(O presiona Cancelar para tocar en el mapa)`);
-        if (dropHere) {
-          dropPinAtCoordinates(lastKnownPosition[0], lastKnownPosition[1], type);
-          cancelPinPlacement();
+      // ==========================================
+      // CAPTURA Y DESCARGA DEL RECORRIDO COMPLETO (ALEJADO A MEDIDA)
+      // ==========================================
+      async function downloadRouteMapCapture() {
+        if (typeof html2canvas === 'undefined') {
+          showToast('Cargando librería de captura...');
+          return;
+        }
+
+        // 1. Recopilar todos los elementos a encuadrar
+        let group = L.featureGroup();
+        let hasGeometry = false;
+
+        // Trazo actual
+        if (liveRoutePolyline && liveCoordinates.length >= 2) {
+          group.addLayer(liveRoutePolyline);
+          hasGeometry = true;
+        }
+
+        // Trazos históricos
+        if (pastRoutesPolylines && pastRoutesPolylines.length > 0) {
+          pastRoutesPolylines.forEach(pl => {
+            group.addLayer(pl);
+            hasGeometry = true;
+          });
+        }
+
+        // Pines marcados
+        pins.forEach(p => {
+          if (p._leafletMarker) {
+            group.addLayer(p._leafletMarker);
+            hasGeometry = true;
+          }
+        });
+
+        // Guardar vista previa
+        const prevCenter = map.getCenter();
+        const prevZoom = map.getZoom();
+
+        showToast('Enfocando todo el recorrido alejado...');
+
+        // 2. Alejar a medida exacta con padding para que todo el recorrido se vea completo
+        if (hasGeometry) {
+          const bounds = group.getBounds();
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, {
+              padding: [60, 60],
+              maxZoom: 16,
+              animate: false
+            });
+          }
+        } else {
+          // Si no hay recorrido aún, encuadrar el centro de Granada
+          map.setView(GRANADA_COORDS.colon, 15, { animate: false });
+        }
+
+        // Pausa para asegurar que los tiles de OpenStreetMap se rendericen
+        await new Promise(r => setTimeout(r, 850));
+
+        try {
+          const mapEl = document.getElementById('map');
+
+          // Captura con html2canvas
+          const mapCanvas = await html2canvas(mapEl, {
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            backgroundColor: '#080d1a'
+          });
+
+          // Crear canvas final con ficha inferior tipo reporte
+          const finalCanvas = document.createElement('canvas');
+          const ctx = finalCanvas.getContext('2d');
+          const bannerH = 115;
+
+          finalCanvas.width = mapCanvas.width;
+          finalCanvas.height = mapCanvas.height + bannerH;
+
+          // 1. Dibujar el mapa encuadrado
+          ctx.drawImage(mapCanvas, 0, 0);
+
+          // 2. Fondo del banner inferior oscuro
+          ctx.fillStyle = '#080d1a';
+          ctx.fillRect(0, mapCanvas.height, finalCanvas.width, bannerH);
+
+          // Barra acento verde
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(0, mapCanvas.height, finalCanvas.width, 4);
+
+          // Textos del reporte
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 22px Inter, sans-serif';
+          ctx.fillText(`🐕 HuellaGPS | Granada, Nicaragua`, 24, mapCanvas.height + 14);
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '14px Inter, sans-serif';
+          const dogText = `Caso: ${dogCase.name || 'Perrito'} • ${dogCase.breed || ''} (${dogCase.zone || 'Granada'})`;
+          ctx.fillText(dogText, 24, mapCanvas.height + 46);
+
+          // Métricas
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 15px monospace, sans-serif';
+          const dText = `Recorrido: ${totalDistanceKm.toFixed(2)} km`;
+          const tText = `Tiempo: ${formatTime(searchElapsedSeconds)}`;
+          const pText = `Pines: ${pins.length}`;
+          const fechaText = new Date().toLocaleDateString('es-NI', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+          ctx.fillText(`${dText}   •   ${tText}   •   ${pText}   •   ${fechaText}`, 24, mapCanvas.height + 74);
+
+          // Descarga automática en PNG
+          const link = document.createElement('a');
+          const dogSafeName = (dogCase.name || 'Perrito').replace(/[^a-zA-Z0-9]/g, '_');
+          link.download = `HuellaGPS_${dogSafeName}_Recorrido_Granada.png`;
+          link.href = finalCanvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          showToast('¡Foto del recorrido descargada!');
+        } catch (e) {
+          console.error("Error al capturar mapa:", e);
+          showToast('Error al generar imagen del mapa.');
+        } finally {
+          // Restaurar posición original
+          map.setView(prevCenter, prevZoom, { animate: false });
         }
       }
-    }
 
-    function cancelPinPlacement() {
-      pendingPinType = null;
-      document.getElementById('pinTapBanner').classList.add('hidden');
-    }
+      function clearCurrentTrack(askConfirm = true) {
+        const doReset = () => {
+          liveCoordinates = [];
+          liveRoutePolyline.setLatLngs([]);
+          totalDistanceKm = 0;
+          searchElapsedSeconds = 0;
+          currentSpeedKmh = 0;
+          document.getElementById('metricSpeed').innerText = '0';
+          document.getElementById('metricDistance').innerText = '0.0';
+          document.getElementById('metricTime').innerText = '00:00';
+          showToast('Trazado reiniciado');
+        };
 
-    function dropPinAtCoordinates(lat, lng, type) {
-      let note = '';
-      if (type === 'sighting') {
-        note = prompt("Detalle del avistamiento:", "Visto por aquí") || "Avistamiento";
-      } else if (type === 'poster') {
-        note = prompt("Detalle de cartel / vecino:", "Cartel pegado") || "Cartel";
-      } else if (type === 'last_seen') {
-        note = "Punto donde se extravió";
-      } else if (type === 'found') {
-        note = "¡Perrito localizado!";
+        if (askConfirm) {
+          showCustomConfirm({
+            title: '¿Reiniciar recorrido?',
+            text: 'Se limpiará el trazado de la búsqueda actual.',
+            icon: 'fa-trash-can',
+            confirmText: 'Reiniciar',
+            confirmBg: 'bg-rose-600 hover:bg-rose-500',
+            onConfirm: doReset
+          });
+        } else {
+          doReset();
+        }
       }
 
-      const pinObj = {
-        id: 'pin_' + Date.now(),
-        type: type,
-        lat: lat,
-        lng: lng,
-        note: note,
-        timestamp: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' })
+      function updateTimerHUD() {
+        searchElapsedSeconds = Math.floor((Date.now() - searchStartTime) / 1000);
+        document.getElementById('metricTime').innerText = formatTime(searchElapsedSeconds);
+      }
+
+      function formatTime(totalSec) {
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+      }
+
+      function updateTrackingButtonUI() {
+        const btn = document.getElementById('btnMainTracking');
+        const icon = document.getElementById('btnTrackingIcon');
+        const text = document.getElementById('btnTrackingText');
+
+        if (!isTracking) {
+          btn.className = 'py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-xs flex items-center justify-center gap-1 shadow-md shadow-emerald-950/40 transition shrink-0';
+          icon.className = 'fa-solid fa-play text-xs';
+          text.innerText = 'Iniciar';
+        } else if (!isPaused) {
+          btn.className = 'py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs flex items-center justify-center gap-1 shadow-md shadow-amber-950/40 transition shrink-0';
+          icon.className = 'fa-solid fa-pause text-xs';
+          text.innerText = 'Pausar';
+        } else {
+          btn.className = 'py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black text-xs flex items-center justify-center gap-1 shadow-md shadow-emerald-950/40 transition shrink-0';
+          icon.className = 'fa-solid fa-play text-xs';
+          text.innerText = 'Reanudar';
+        }
+      }
+
+      async function requestWakeLock() {
+        try {
+          if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            document.getElementById('wakeLockBadge').classList.remove('text-slate-500');
+            document.getElementById('wakeLockBadge').classList.add('text-amber-400');
+          }
+        } catch (err) {}
+      }
+
+      function releaseWakeLock() {
+        if (wakeLock !== null) {
+          wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
+          document.getElementById('wakeLockBadge').classList.remove('text-amber-400');
+          document.getElementById('wakeLockBadge').classList.add('text-slate-500');
+        }
+      }
+
+      // ==========================================
+      // HISTORIAL DE RUTAS PREVIAS
+      // ==========================================
+      function saveRouteToHistory(routeObj) {
+        let history = getStoredRoutes();
+        history.push(routeObj);
+        localStorage.setItem('huellagps_history_routes', JSON.stringify(history));
+        drawSinglePastRoute(routeObj);
+      }
+
+      function getStoredRoutes() {
+        try {
+          return JSON.parse(localStorage.getItem('huellagps_history_routes')) || [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function loadPastRoutesToMap() {
+        pastRoutesPolylines.forEach(pl => map.removeLayer(pl));
+        pastRoutesPolylines = [];
+        const routes = getStoredRoutes();
+        routes.forEach(route => drawSinglePastRoute(route));
+      }
+
+      function drawSinglePastRoute(route) {
+        if (!route.coordinates || route.coordinates.length < 2) return;
+        const pl = L.polyline(route.coordinates, {
+          color: '#0284c7', // Azul cielo discreto
+          weight: 4,
+          opacity: 0.65,
+          dashArray: '8, 6',
+          lineJoin: 'round'
+        }).addTo(map);
+
+        pl.bindPopup(`
+          <div class="text-xs p-1 text-slate-900 font-sans">
+            <div class="font-bold text-sky-700"><i class="fa-solid fa-route"></i> Calle ya recorrida</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">${route.date}</div>
+            <div class="text-[11px] font-mono mt-0.5">Distancia: <b>${route.distanceKm} km</b></div>
+          </div>
+        `);
+
+        pastRoutesPolylines.push(pl);
+      }
+
+      function togglePastRoutes() {
+        isPastRoutesVisible = !isPastRoutesVisible;
+        pastRoutesPolylines.forEach(pl => {
+          if (isPastRoutesVisible) map.addLayer(pl);
+          else map.removeLayer(pl);
+        });
+        showToast(isPastRoutesVisible ? 'Mostrando calles ya recorridas' : 'Ocultando historial');
+      }
+
+      // ==========================================
+      // MODO SIMULAR MOTO POR GRANADA
+      // ==========================================
+      function toggleSimulation() {
+        if (isSimulating) stopSimulation();
+        else startSimulation();
+      }
+
+      function startSimulation() {
+        if (isTracking) {
+          showToast("Pausa o finaliza la búsqueda real primero.");
+          return;
+        }
+
+        isSimulating = true;
+        simIndex = 0;
+        totalDistanceKm = 0;
+        searchElapsedSeconds = 0;
+        liveCoordinates = [];
+        liveRoutePolyline.setLatLngs([]);
+
+        const btn = document.getElementById('btnSimulate');
+        btn.classList.add('bg-amber-500', 'text-slate-950');
+        btn.querySelector('i').className = 'fa-solid fa-stop text-slate-950 text-base';
+
+        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        document.getElementById('gpsStatusText').innerText = 'Simulación activa';
+        document.getElementById('btnFinishTracking').classList.remove('hidden');
+        document.getElementById('btnClearCurrentRoute').classList.remove('hidden');
+
+        showToast('Simulando moto por Parque Colón, Calzada y Malecón');
+
+        const firstPt = SIMULATION_ROUTE[0];
+        map.setView(firstPt, 16);
+        updateUserMarker(firstPt[0], firstPt[1]);
+
+        simInterval = setInterval(() => {
+          if (simIndex >= SIMULATION_ROUTE.length) simIndex = 0;
+          const pt = SIMULATION_ROUTE[simIndex];
+          const lat = pt[0];
+          const lng = pt[1];
+
+          currentSpeedKmh = Math.floor(25 + Math.random() * 10);
+          document.getElementById('metricSpeed').innerText = currentSpeedKmh;
+
+          if (lastKnownPosition) {
+            const d = getDistanceFromLatLonInKm(lastKnownPosition[0], lastKnownPosition[1], lat, lng);
+            totalDistanceKm += d;
+            document.getElementById('metricDistance').innerText = totalDistanceKm.toFixed(2);
+          }
+
+          searchElapsedSeconds += 2;
+          document.getElementById('metricTime').innerText = formatTime(searchElapsedSeconds);
+
+          liveCoordinates.push([lat, lng]);
+          liveRoutePolyline.setLatLngs(liveCoordinates);
+          updateUserMarker(lat, lng);
+          map.panTo([lat, lng], { animate: true });
+
+          simIndex++;
+        }, 1400);
+      }
+
+      function stopSimulation() {
+        isSimulating = false;
+        clearInterval(simInterval);
+        simInterval = null;
+
+        const btn = document.getElementById('btnSimulate');
+        btn.classList.remove('bg-amber-500', 'text-slate-950');
+        btn.querySelector('i').className = 'fa-solid fa-motorcycle text-amber-400 text-base';
+
+        document.getElementById('metricSpeed').innerText = '0';
+        document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
+        document.getElementById('gpsStatusText').innerText = 'GPS Listo';
+        showToast('Simulación detenida');
+      }
+
+      // ==========================================
+      // SISTEMA MODERNO DE MODALES (SIN ALERTS NATIVOS)
+      // ==========================================
+      let customConfirmCallback = null;
+      let pinPlacementMode = 'gps'; // 'gps' o 'map'
+
+      function showCustomConfirm({ title, text, icon, confirmText, confirmBg, onConfirm }) {
+        document.getElementById('confirmModalTitle').innerText = title || '¿Estás seguro?';
+        document.getElementById('confirmModalText').innerText = text || '';
+        document.getElementById('confirmModalIcon').className = `fa-solid ${icon || 'fa-circle-question'}`;
+
+        const btn = document.getElementById('btnConfirmModalAction');
+        btn.innerText = confirmText || 'Confirmar';
+        btn.className = `flex-1 py-2.5 rounded-xl ${confirmBg || 'bg-rose-600 hover:bg-rose-500'} text-white font-bold text-xs active:scale-95 transition`;
+
+        customConfirmCallback = onConfirm;
+        document.getElementById('customConfirmModal').classList.remove('hidden');
+      }
+
+      function closeCustomConfirm(confirmed) {
+        document.getElementById('customConfirmModal').classList.add('hidden');
+        if (confirmed && customConfirmCallback) {
+          customConfirmCallback();
+        }
+        customConfirmCallback = null;
+      }
+
+      // ==========================================
+      // PINES RÁPIDOS (MODAL MODERNO TÁCTICO)
+      // ==========================================
+      const PIN_CONFIGS = {
+        last_seen: {
+          title: 'Última Vez Visto',
+          sub: 'Punto inicial de extravío en Granada',
+          icon: 'fa-location-crosshairs',
+          badgeBg: 'bg-rose-600 text-white',
+          chips: ['Punto donde se extravió', 'Visto por última vez aquí', 'Salió de casa corriendo'],
+          defaultNote: 'Punto de extravío'
+        },
+        sighting: {
+          title: 'Avistamiento / Pista',
+          sub: 'Alguien vio al perrito en esta zona',
+          icon: 'fa-paw',
+          badgeBg: 'bg-amber-500 text-slate-950',
+          chips: ['Corriendo hacia el lago', 'Visto hace 15 min', 'Asustado en esquina', 'Con collar rojo'],
+          defaultNote: 'Avistamiento en esta calle'
+        },
+        poster: {
+          title: 'Cartel Pegado / Vecino',
+          sub: 'Lugar donde se dejó aviso o se preguntó',
+          icon: 'fa-clipboard-question',
+          badgeBg: 'bg-blue-600 text-white',
+          chips: ['Poste esquinero', 'Pulpería consultada', 'Taller / Negocio avisado', 'Veterinaria'],
+          defaultNote: 'Cartel pegado en poste'
+        },
+        found: {
+          title: '¡Perrito Encontrado!',
+          sub: 'Punto donde se rescató al perrito',
+          icon: 'fa-heart',
+          badgeBg: 'bg-emerald-500 text-slate-950',
+          chips: ['¡Localizado sano y salvo!', 'En resguardo con vecino', 'Lo tiene el rescatista'],
+          defaultNote: '¡Perrito rescatado aquí!'
+        }
       };
 
-      pins.push(pinObj);
-      savePins();
-      renderPinOnMap(pinObj);
-      updatePinsUI();
+      function prepareAddPin(type) {
+        pendingPinType = type;
+        const cfg = PIN_CONFIGS[type] || PIN_CONFIGS.sighting;
 
-      if (type === 'last_seen') updateSearchRadiusCircle([lat, lng]);
-      if (type === 'found') alert("🎉 ¡Excelente noticia! ¡Perrito encontrado!");
+        // Configurar Modal
+        document.getElementById('addPinModalTitle').innerText = cfg.title;
+        document.getElementById('addPinModalSubtitle').innerText = cfg.sub;
+        document.getElementById('addPinModalIcon').className = `fa-solid ${cfg.icon}`;
+        document.getElementById('addPinModalIconBadge').className = `w-9 h-9 rounded-xl ${cfg.badgeBg} flex items-center justify-center text-base shadow`;
 
-      showToast('Pin colocado con éxito');
-    }
+        const input = document.getElementById('inputPinNote');
+        input.value = cfg.defaultNote;
 
-    function renderPinOnMap(pin) {
-      const configs = {
-        last_seen: { icon: 'fa-location-crosshairs', bg: 'bg-rose-600', label: 'Última vez visto' },
-        sighting: { icon: 'fa-paw', bg: 'bg-amber-500', label: 'Avistamiento' },
-        poster: { icon: 'fa-clipboard-question', bg: 'bg-blue-600', label: 'Cartel pegado' },
-        found: { icon: 'fa-heart', bg: 'bg-emerald-500', label: '¡Encontrado!' }
-      };
+        // Renderizar Chips rápidos
+        const chipsContainer = document.getElementById('pinQuickChips');
+        chipsContainer.innerHTML = cfg.chips.map(chip => `
+          <button type="button" onclick="setPinQuickNote('${chip}')" class="shrink-0 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-300 text-[10px] font-semibold px-2.5 py-1 rounded-full transition">
+            ${chip}
+          </button>
+        `).join('');
 
-      const cfg = configs[pin.type] || configs.sighting;
+        // Modo de colocación inicial
+        selectPinPlacementMode(lastKnownPosition ? 'gps' : 'map');
 
-      const html = `
-        <div class="relative flex flex-col items-center cursor-pointer">
-          <div class="w-7 h-7 rounded-full ${cfg.bg} text-white flex items-center justify-center shadow-lg border-2 border-white">
-            <i class="fa-solid ${cfg.icon} text-xs"></i>
-          </div>
-          <div class="w-1.5 h-1.5 bg-slate-900 rotate-45 -mt-0.5"></div>
-        </div>
-      `;
+        // Abrir modal
+        document.getElementById('addPinModal').classList.remove('hidden');
+      }
 
-      const customIcon = L.divIcon({
-        className: 'custom-pin',
-        html: html,
-        iconSize: [28, 34],
-        iconAnchor: [14, 34],
-        popupAnchor: [0, -32]
-      });
+      function setPinQuickNote(text) {
+        document.getElementById('inputPinNote').value = text;
+      }
 
-      const marker = L.marker([pin.lat, pin.lng], { icon: customIcon }).addTo(map);
+      function selectPinPlacementMode(mode) {
+        pinPlacementMode = mode;
+        const btnGps = document.getElementById('btnPinLocationGPS');
+        const btnMap = document.getElementById('btnPinLocationMap');
+        const btnSaveText = document.getElementById('btnSavePinText');
 
-      marker.bindPopup(`
-        <div class="font-sans text-slate-900 p-1 min-w-[150px]">
-          <div class="font-black text-xs text-slate-800 flex items-center gap-1">
-            <i class="fa-solid ${cfg.icon}"></i> ${cfg.label}
-          </div>
-          <div class="text-xs text-slate-700 mt-0.5">"${pin.note}"</div>
-          <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-            <span>Hora: ${pin.timestamp}</span>
-            <button onclick="deletePinById('${pin.id}')" class="text-rose-600 hover:text-rose-800 font-bold ml-2">Borrar</button>
-          </div>
-        </div>
-      `);
+        if (mode === 'gps') {
+          btnGps.className = 'p-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-500/15 text-emerald-300 text-xs font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition shadow-sm';
+          btnMap.className = 'p-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 text-xs font-semibold flex flex-col items-center justify-center gap-1 active:scale-95 transition';
+          btnSaveText.innerText = 'Guardar en mi Ubicación';
+        } else {
+          btnMap.className = 'p-2.5 rounded-xl border-2 border-amber-500 bg-amber-500/15 text-amber-300 text-xs font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition shadow-sm';
+          btnGps.className = 'p-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 text-xs font-semibold flex flex-col items-center justify-center gap-1 active:scale-95 transition';
+          btnSaveText.innerText = 'Continuar y Tocar en Mapa';
+        }
+      }
 
-      pin._leafletMarker = marker;
-    }
+      function closeAddPinModal() {
+        document.getElementById('addPinModal').classList.add('hidden');
+        pendingPinType = null;
+      }
 
-    function updatePinsUI() {
-      const badge = document.getElementById('pinsCountBadge');
-      if (badge) badge.innerText = pins.length;
+      function confirmSavePin() {
+        const note = document.getElementById('inputPinNote').value.trim() || 'Punto marcado';
+        const type = pendingPinType;
 
-      const container = document.getElementById('pinsListContainer');
-      if (!container) return;
+        document.getElementById('addPinModal').classList.add('hidden');
 
-      if (pins.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-6 text-slate-500 text-xs">
-            <i class="fa-solid fa-map-location-dot text-xl mb-1 text-slate-600"></i>
-            <p>No hay pines colocados aún.</p>
+        if (pinPlacementMode === 'gps') {
+          let lat = GRANADA_COORDS.colon[0];
+          let lng = GRANADA_COORDS.colon[1];
+          if (lastKnownPosition) {
+            lat = lastKnownPosition[0];
+            lng = lastKnownPosition[1];
+          }
+          createAndSavePin(lat, lng, type, note);
+        } else {
+          // Modo toque en mapa
+          const banner = document.getElementById('pinTapBanner');
+          const text = document.getElementById('pinTapBannerText');
+          banner.classList.remove('hidden');
+          text.innerText = `Toca en el mapa para colocar el pin: "${note}"`;
+
+          // Guardar nota temporal
+          window._pendingPinNote = note;
+        }
+      }
+
+      function cancelPinPlacement() {
+        pendingPinType = null;
+        window._pendingPinNote = null;
+        document.getElementById('pinTapBanner').classList.add('hidden');
+      }
+
+      function dropPinAtCoordinates(lat, lng, type) {
+        const note = window._pendingPinNote || 'Punto marcado';
+        window._pendingPinNote = null;
+        createAndSavePin(lat, lng, type, note);
+      }
+
+      function createAndSavePin(lat, lng, type, note) {
+        const pinObj = {
+          id: 'pin_' + Date.now(),
+          type: type,
+          lat: lat,
+          lng: lng,
+          note: note,
+          timestamp: new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        pins.push(pinObj);
+        savePins();
+        renderPinOnMap(pinObj);
+        updatePinsUI();
+
+        if (type === 'last_seen') updateSearchRadiusCircle([lat, lng]);
+
+        if (type === 'found') {
+          openFoundCelebration();
+        } else {
+          showToast('¡Pin colocado con éxito!');
+        }
+      }
+
+      function openFoundCelebration() {
+        const cleanPhone = (dogCase.phone || '').replace(/\D/g, '');
+        const fullPhone = cleanPhone.startsWith('505') ? cleanPhone : '505' + cleanPhone;
+        document.getElementById('btnCallSuccess').href = `tel:+${fullPhone}`;
+        document.getElementById('foundSuccessModal').classList.remove('hidden');
+      }
+
+      function closeFoundSuccessModal() {
+        document.getElementById('foundSuccessModal').classList.add('hidden');
+      }
+
+      function renderPinOnMap(pin) {
+        const cfg = PIN_CONFIGS[pin.type] || PIN_CONFIGS.sighting;
+
+        const html = `
+          <div class="relative flex flex-col items-center cursor-pointer">
+            <div class="w-7 h-7 rounded-full ${cfg.badgeBg} flex items-center justify-center shadow-lg border-2 border-white">
+              <i class="fa-solid ${cfg.icon} text-xs"></i>
+            </div>
+            <div class="w-1.5 h-1.5 bg-slate-900 rotate-45 -mt-0.5"></div>
           </div>
         `;
-        return;
-      }
 
-      container.innerHTML = pins.map(p => `
-        <div class="pt-2 pb-1.5 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2 min-w-0 cursor-pointer" onclick="panToPin('${p.id}')">
-            <span class="w-6 h-6 rounded-lg ${getPinBadgeBg(p.type)} flex items-center justify-center text-xs shrink-0 text-white">
-              <i class="fa-solid ${getPinBadgeIcon(p.type)}"></i>
-            </span>
-            <div class="min-w-0">
-              <div class="text-xs font-bold text-white truncate">${p.note || p.type}</div>
-              <div class="text-[10px] text-slate-400">${p.timestamp}</div>
+        const customIcon = L.divIcon({
+          className: 'custom-pin',
+          html: html,
+          iconSize: [28, 34],
+          iconAnchor: [14, 34],
+          popupAnchor: [0, -32]
+        });
+
+        const marker = L.marker([pin.lat, pin.lng], { icon: customIcon }).addTo(map);
+
+        marker.bindPopup(`
+          <div class="font-sans text-slate-900 p-1 min-w-[150px]">
+            <div class="font-black text-xs text-slate-800 flex items-center gap-1">
+              <i class="fa-solid ${cfg.icon}"></i> ${cfg.title}
+            </div>
+            <div class="text-xs text-slate-700 mt-0.5">"${pin.note}"</div>
+            <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+              <span>Hora: ${pin.timestamp}</span>
+              <button onclick="deletePinById('${pin.id}')" class="text-rose-600 hover:text-rose-800 font-bold ml-2">Borrar</button>
             </div>
           </div>
-          <button onclick="deletePinById('${p.id}')" class="w-6 h-6 rounded-lg bg-rose-950/40 text-rose-400 hover:bg-rose-900/60 flex items-center justify-center text-xs shrink-0">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
-        </div>
-      `).join('');
-    }
+        `);
 
-    function getPinBadgeBg(t) {
-      if (t === 'last_seen') return 'bg-rose-600';
-      if (t === 'sighting') return 'bg-amber-500 text-slate-950';
-      if (t === 'poster') return 'bg-blue-600';
-      if (t === 'found') return 'bg-emerald-500 text-slate-950';
-      return 'bg-slate-700';
-    }
-
-    function getPinBadgeIcon(t) {
-      if (t === 'last_seen') return 'fa-location-crosshairs';
-      if (t === 'sighting') return 'fa-paw';
-      if (t === 'poster') return 'fa-clipboard-question';
-      if (t === 'found') return 'fa-heart';
-      return 'fa-map-pin';
-    }
-
-    function panToPin(id) {
-      const pin = pins.find(p => p.id === id);
-      if (pin) {
-        closePinsDrawer();
-        map.setView([pin.lat, pin.lng], 17, { animate: true });
-        if (pin._leafletMarker) pin._leafletMarker.openPopup();
-      }
-    }
-
-    function deletePinById(id) {
-      const idx = pins.findIndex(p => p.id === id);
-      if (idx !== -1) {
-        const pin = pins[idx];
-        if (pin._leafletMarker) map.removeLayer(pin._leafletMarker);
-        pins.splice(idx, 1);
-        savePins();
-        updatePinsUI();
-        showToast('Pin eliminado');
-      }
-    }
-
-    function clearAllPins() {
-      if (pins.length === 0) return;
-      if (confirm("¿Borrar todos los pines?")) {
-        pins.forEach(p => { if (p._leafletMarker) map.removeLayer(p._leafletMarker); });
-        pins = [];
-        savePins();
-        updatePinsUI();
-        showToast('Todos los pines eliminados');
-      }
-    }
-
-    function openPinsDrawer() {
-      updatePinsUI();
-      document.getElementById('pinsDrawer').classList.remove('hidden');
-    }
-
-    function closePinsDrawer() {
-      document.getElementById('pinsDrawer').classList.add('hidden');
-    }
-
-    // ==========================================
-    // FICHA DEL CASO Y LOCALSTORAGE
-    // ==========================================
-    function renderCaseHeader() {
-      document.getElementById('dogName').innerText = dogCase.name || 'Sin nombre';
-      document.getElementById('dogBreedDesc').innerText = dogCase.breed || 'Sin descripción';
-      document.getElementById('dogZone').innerText = dogCase.zone || 'Granada, Nicaragua';
-
-      const cleanPhone = (dogCase.phone || '').replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('505') ? cleanPhone : '505' + cleanPhone;
-      
-      document.getElementById('btnCall').href = `tel:+${fullPhone}`;
-      const waMsg = encodeURIComponent(`Hola, tengo información sobre el perrito ${dogCase.name} perdido en Granada.`);
-      document.getElementById('btnWhatsApp').href = `https://wa.me/${fullPhone}?text=${waMsg}`;
-
-      const badge = document.getElementById('rewardBadge');
-      const badgeText = document.getElementById('rewardBadgeText');
-
-      if (dogCase.hasReward) {
-        badge.classList.remove('hidden');
-        badgeText.innerText = dogCase.rewardAmount || 'Recompensa';
-      } else {
-        badge.classList.add('hidden');
+        pin._leafletMarker = marker;
       }
 
-      const imgEl = document.getElementById('dogImg');
-      const placeholder = document.getElementById('dogImgPlaceholder');
-      if (dogCase.photo) {
-        imgEl.src = dogCase.photo;
-        imgEl.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-      } else {
-        imgEl.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-      }
-    }
+      function updatePinsUI() {
+        const badge = document.getElementById('pinsCountBadge');
+        if (badge) badge.innerText = pins.length;
 
-    function openCaseModal() {
-      document.getElementById('inputDogName').value = dogCase.name || '';
-      document.getElementById('inputDogBreed').value = dogCase.breed || '';
-      document.getElementById('inputDogZone').value = dogCase.zone || '';
-      document.getElementById('inputDogPhone').value = (dogCase.phone || '').replace('+505', '').trim();
-      document.getElementById('checkReward').checked = !!dogCase.hasReward;
-      document.getElementById('inputRewardAmount').value = dogCase.rewardAmount || '';
-      toggleRewardInputVisibility();
+        const container = document.getElementById('pinsListContainer');
+        if (!container) return;
 
-      const preview = document.getElementById('modalPhotoPreview');
-      if (dogCase.photo) {
-        preview.innerHTML = `<img src="${dogCase.photo}" class="w-full h-full object-cover">`;
-      } else {
-        preview.innerHTML = `<i class="fa-solid fa-camera text-slate-500 text-lg"></i>`;
-      }
-
-      const photoInput = document.getElementById('modalDogPhotoInput');
-      photoInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (re) => {
-            dogCase.photo = re.target.result;
-            preview.innerHTML = `<img src="${dogCase.photo}" class="w-full h-full object-cover">`;
-          };
-          reader.readAsDataURL(file);
+        if (pins.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-8 text-slate-500 text-xs">
+              <i class="fa-solid fa-map-location-dot text-2xl mb-1.5 text-slate-600 block"></i>
+              <p class="font-semibold text-slate-400">No hay pines registrados</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Toca los botones inferiores de "Pin" para marcar pistas o carteles.</p>
+            </div>
+          `;
+          return;
         }
-      };
 
-      document.getElementById('caseModal').classList.remove('hidden');
-    }
+        container.innerHTML = pins.map(p => {
+          const cfg = PIN_CONFIGS[p.type] || PIN_CONFIGS.sighting;
+          return `
+            <div class="py-2.5 flex items-center justify-between gap-2.5 min-w-0">
+              <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" onclick="panToPin('${p.id}')">
+                <span class="w-8 h-8 rounded-xl ${cfg.badgeBg} flex items-center justify-center text-xs shrink-0 shadow-sm">
+                  <i class="fa-solid ${cfg.icon}"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-bold text-white truncate">${escapeHtml(p.note || cfg.title)}</div>
+                  <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <span class="text-emerald-400 font-medium">${cfg.title}</span>
+                    <span>&bull;</span>
+                    <span>${p.timestamp}</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="deletePinById('${p.id}')" class="w-7 h-7 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 flex items-center justify-center text-xs shrink-0 active:scale-95 transition" title="Borrar pin">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
 
-    function closeCaseModal() {
-      document.getElementById('caseModal').classList.add('hidden');
-    }
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        return div.innerHTML;
+      }
 
-    function toggleRewardInputVisibility() {
-      const isChecked = document.getElementById('checkReward').checked;
-      const box = document.getElementById('rewardDetailsBox');
-      if (isChecked) box.classList.remove('hidden');
-      else box.classList.add('hidden');
-    }
-
-    function saveCaseForm(e) {
-      e.preventDefault();
-      dogCase.name = document.getElementById('inputDogName').value.trim();
-      dogCase.breed = document.getElementById('inputDogBreed').value.trim();
-      dogCase.zone = document.getElementById('inputDogZone').value.trim();
-      dogCase.phone = document.getElementById('inputDogPhone').value.trim();
-      dogCase.hasReward = document.getElementById('checkReward').checked;
-      dogCase.rewardAmount = document.getElementById('inputRewardAmount').value.trim();
-
-      saveCaseData();
-      renderCaseHeader();
-      closeCaseModal();
-      showToast('Ficha actualizada');
-    }
-
-    function saveCaseData() {
-      localStorage.setItem('huellagps_dog_case', JSON.stringify(dogCase));
-    }
-
-    function savePins() {
-      const serialized = pins.map(p => ({
-        id: p.id,
-        type: p.type,
-        lat: p.lat,
-        lng: p.lng,
-        note: p.note,
-        timestamp: p.timestamp
-      }));
-      localStorage.setItem('huellagps_pins', JSON.stringify(serialized));
-    }
-
-    function loadSavedData() {
-      try {
-        const savedCase = localStorage.getItem('huellagps_dog_case');
-        if (savedCase) dogCase = Object.assign(dogCase, JSON.parse(savedCase));
-      } catch (e) {}
-
-      try {
-        const savedPins = localStorage.getItem('huellagps_pins');
-        if (savedPins) {
-          pins = JSON.parse(savedPins);
-          pins.forEach(p => renderPinOnMap(p));
+      function panToPin(id) {
+        const pin = pins.find(p => p.id === id);
+        if (pin) {
+          closePinsDrawer();
+          map.setView([pin.lat, pin.lng], 17, { animate: true });
+          if (pin._leafletMarker) pin._leafletMarker.openPopup();
         }
-      } catch (e) {}
-    }
-
-    function panToPreset(presetKey) {
-      const coords = GRANADA_COORDS[presetKey];
-      if (coords && map) {
-        map.setView(coords, 16, { animate: true });
-        showToast(`Centrado en: ${presetKey.toUpperCase()}`);
       }
-    }
 
-    function recenterToGPS() {
-      if (lastKnownPosition && map) {
-        map.setView(lastKnownPosition, 17, { animate: true });
-        showToast('Centrado en tu ubicación');
-      } else {
-        map.setView(GRANADA_COORDS.colon, 16, { animate: true });
-        showToast('Centrado en Parque Colón');
+      function deletePinById(id) {
+        const idx = pins.findIndex(p => p.id === id);
+        if (idx !== -1) {
+          const pin = pins[idx];
+          if (pin._leafletMarker) map.removeLayer(pin._leafletMarker);
+          pins.splice(idx, 1);
+          savePins();
+          updatePinsUI();
+          showToast('Pin eliminado');
+        }
       }
-    }
 
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      const text = document.getElementById('toastMsg');
-      text.innerText = msg;
-      t.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-none flex items-center gap-2 bg-slate-900 text-white border border-slate-700';
-      
-      clearTimeout(t._timer);
-      t._timer = setTimeout(() => {
-        t.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 transform -translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 bg-slate-900 text-white border border-slate-700';
-      }, 2200);
-    }
+      function confirmClearAllPins() {
+        if (pins.length === 0) return;
+        showCustomConfirm({
+          title: '¿Borrar todos los pines?',
+          text: 'Se eliminarán todos los marcadores y avistamientos de este mapa.',
+          icon: 'fa-trash-can',
+          confirmText: 'Borrar Todos',
+          confirmBg: 'bg-rose-600 hover:bg-rose-500',
+          onConfirm: () => {
+            pins.forEach(p => { if (p._leafletMarker) map.removeLayer(p._leafletMarker); });
+            pins = [];
+            savePins();
+            updatePinsUI();
+            showToast('Todos los pines eliminados');
+          }
+        });
+      }
 
-    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = deg2rad(lat2 - lat1);
-      const dLon = deg2rad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
+      function openPinsDrawer() {
+        updatePinsUI();
+        document.getElementById('pinsDrawer').classList.remove('hidden');
+      }
 
-    function deg2rad(deg) { return deg * (Math.PI / 180); }
-  </script>
-</body>
+      function closePinsDrawer() {
+        document.getElementById('pinsDrawer').classList.add('hidden');
+      }
+
+      // ==========================================
+      // FICHA DEL CASO Y LOCALSTORAGE
+      // ==========================================
+      function renderCaseHeader() {
+        document.getElementById('dogName').innerText = dogCase.name || 'Sin nombre';
+        document.getElementById('dogBreedDesc').innerText = dogCase.breed || 'Sin descripción';
+        document.getElementById('dogZone').innerText = dogCase.zone || 'Granada, Nicaragua';
+
+        const cleanPhone = (dogCase.phone || '').replace(/\D/g, '');
+        const fullPhone = cleanPhone.startsWith('505') ? cleanPhone : '505' + cleanPhone;
+
+        document.getElementById('btnCall').href = `tel:+${fullPhone}`;
+        const waMsg = encodeURIComponent(`Hola, tengo información sobre el perrito ${dogCase.name} perdido en Granada.`);
+        document.getElementById('btnWhatsApp').href = `https://wa.me/${fullPhone}?text=${waMsg}`;
+
+        const badge = document.getElementById('rewardBadge');
+        const badgeText = document.getElementById('rewardBadgeText');
+
+        if (dogCase.hasReward) {
+          badge.classList.remove('hidden');
+          badgeText.innerText = dogCase.rewardAmount || 'Recompensa';
+        } else {
+          badge.classList.add('hidden');
+        }
+
+        const imgEl = document.getElementById('dogImg');
+        const placeholder = document.getElementById('dogImgPlaceholder');
+        if (dogCase.photo) {
+          imgEl.src = dogCase.photo;
+          imgEl.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        } else {
+          imgEl.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+        }
+      }
+
+      function openCaseModal() {
+        document.getElementById('inputDogName').value = dogCase.name || '';
+        document.getElementById('inputDogBreed').value = dogCase.breed || '';
+        document.getElementById('inputDogZone').value = dogCase.zone || '';
+        document.getElementById('inputDogPhone').value = (dogCase.phone || '').replace('+505', '').trim();
+        document.getElementById('checkReward').checked = !!dogCase.hasReward;
+        document.getElementById('inputRewardAmount').value = dogCase.rewardAmount || '';
+        toggleRewardInputVisibility();
+
+        const preview = document.getElementById('modalPhotoPreview');
+        if (dogCase.photo) {
+          preview.innerHTML = `<img src="${dogCase.photo}" class="w-full h-full object-cover">`;
+        } else {
+          preview.innerHTML = `<i class="fa-solid fa-camera text-slate-500 text-lg"></i>`;
+        }
+
+        const photoInput = document.getElementById('modalDogPhotoInput');
+        photoInput.onchange = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (re) => {
+              dogCase.photo = re.target.result;
+              preview.innerHTML = `<img src="${dogCase.photo}" class="w-full h-full object-cover">`;
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+
+        document.getElementById('caseModal').classList.remove('hidden');
+      }
+
+      function closeCaseModal() {
+        document.getElementById('caseModal').classList.add('hidden');
+      }
+
+      function toggleRewardInputVisibility() {
+        const isChecked = document.getElementById('checkReward').checked;
+        const box = document.getElementById('rewardDetailsBox');
+        if (isChecked) box.classList.remove('hidden');
+        else box.classList.add('hidden');
+      }
+
+      function saveCaseForm(e) {
+        e.preventDefault();
+        dogCase.name = document.getElementById('inputDogName').value.trim();
+        dogCase.breed = document.getElementById('inputDogBreed').value.trim();
+        dogCase.zone = document.getElementById('inputDogZone').value.trim();
+        dogCase.phone = document.getElementById('inputDogPhone').value.trim();
+        dogCase.hasReward = document.getElementById('checkReward').checked;
+        dogCase.rewardAmount = document.getElementById('inputRewardAmount').value.trim();
+
+        saveCaseData();
+        renderCaseHeader();
+        closeCaseModal();
+        showToast('Ficha actualizada');
+      }
+
+      function saveCaseData() {
+        localStorage.setItem('huellagps_dog_case', JSON.stringify(dogCase));
+      }
+
+      function savePins() {
+        const serialized = pins.map(p => ({
+          id: p.id,
+          type: p.type,
+          lat: p.lat,
+          lng: p.lng,
+          note: p.note,
+          timestamp: p.timestamp
+        }));
+        localStorage.setItem('huellagps_pins', JSON.stringify(serialized));
+      }
+
+      function loadSavedData() {
+        try {
+          const savedCase = localStorage.getItem('huellagps_dog_case');
+          if (savedCase) dogCase = Object.assign(dogCase, JSON.parse(savedCase));
+        } catch (e) {}
+
+        try {
+          const savedPins = localStorage.getItem('huellagps_pins');
+          if (savedPins) {
+            pins = JSON.parse(savedPins);
+            pins.forEach(p => renderPinOnMap(p));
+          }
+        } catch (e) {}
+      }
+
+      function panToPreset(presetKey) {
+        const coords = GRANADA_COORDS[presetKey];
+        if (coords && map) {
+          map.setView(coords, 16, { animate: true });
+          showToast(`Centrado en: ${presetKey.toUpperCase()}`);
+        }
+      }
+
+      function recenterToGPS() {
+        if (lastKnownPosition && map) {
+          map.setView(lastKnownPosition, 17, { animate: true });
+          showToast('Centrado en tu ubicación');
+        } else {
+          map.setView(GRANADA_COORDS.colon, 16, { animate: true });
+          showToast('Centrado en Parque Colón');
+        }
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        const text = document.getElementById('toastMsg');
+        text.innerText = msg;
+        t.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-none flex items-center gap-2 bg-slate-900 text-white border border-slate-700';
+
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => {
+          t.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl transition-all duration-300 transform -translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 bg-slate-900 text-white border border-slate-700';
+        }, 2200);
+      }
+
+      function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = deg2rad(lat2 - lat1);
+        const dLon = deg2rad(lon2 - lon1);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      }
+
+      function deg2rad(deg) { return deg * (Math.PI / 180); }
+    </script>
+  </body>
 </html>
