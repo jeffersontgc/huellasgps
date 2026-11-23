@@ -67,6 +67,18 @@ async function runVerification() {
   await page.click('#customConfirmModal button:has-text("Cancelar")');
   await page.waitForSelector('#customConfirmModal', { state: 'hidden' });
 
+  // 3.1 Probar botón Reiniciar (basurero) y que regrese a estado inicial
+  console.log('Probando botón Reiniciar...');
+  await page.click('#btnClearCurrentRoute');
+  await page.waitForSelector('#customConfirmModal:not(.hidden)');
+  await page.click('#btnConfirmModalAction'); // Botón Reiniciar
+  await page.waitForSelector('#customConfirmModal', { state: 'hidden' });
+  await page.waitForTimeout(500);
+
+  const finishVisible = await page.isVisible('#btnFinishTracking');
+  const trackingText = await page.innerText('#btnTrackingText');
+  console.log(`✓ Verificación Reiniciar: Fin visible = ${finishVisible} (esperado false), Botón = ${trackingText} (esperado Iniciar)`);
+
   // 4. Abrir lista de pines
   console.log('Abriendo drawer de pines...');
   await page.click('button[onclick*="openPinsDrawer"]');
