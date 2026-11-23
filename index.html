@@ -1686,6 +1686,19 @@
 
       function clearCurrentTrack(askConfirm = true) {
         const doReset = () => {
+          if (watchId) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+          clearInterval(searchTimerInterval);
+          if (isSimulating) {
+            stopSimulation();
+          }
+          releaseWakeLock();
+
+          isTracking = false;
+          isPaused = false;
+
           liveCoordinates = [];
           liveRoutePolyline.setLatLngs([]);
           totalDistanceKm = 0;
@@ -1694,13 +1707,21 @@
           document.getElementById('metricSpeed').innerText = '0';
           document.getElementById('metricDistance').innerText = '0.0';
           document.getElementById('metricTime').innerText = '00:00';
-          showToast('Trazado reiniciado');
+
+          updateTrackingButtonUI();
+
+          document.getElementById('btnFinishTracking').classList.add('hidden');
+          document.getElementById('btnClearCurrentRoute').classList.add('hidden');
+          document.getElementById('gpsIndicatorDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
+          document.getElementById('gpsStatusText').innerText = 'GPS Granada Listo';
+
+          showToast('Búsqueda reiniciada');
         };
 
         if (askConfirm) {
           showCustomConfirm({
             title: '¿Reiniciar recorrido?',
-            text: 'Se limpiará el trazado de la búsqueda actual.',
+            text: 'Se detendrá la búsqueda y se limpiará el trazado actual.',
             icon: 'fa-trash-can',
             confirmText: 'Reiniciar',
             confirmBg: 'bg-rose-600 hover:bg-rose-500',
